@@ -2,8 +2,9 @@
   <div>
     <div class="tracker-header">
       <div class="week-label">
-        <span>Week:</span>
-        <input v-model="weekLabel" placeholder="e.g. June 9–15" class="week-input" />
+        <span>📅 Week starting:</span>
+        <input type="date" v-model="startDate" class="date-picker" @change="onDatePick" />
+        <span v-if="weekLabel" class="week-range-badge">{{ weekLabel }}</span>
       </div>
       <button class="new-week-btn" @click="newWeek">+ New Week</button>
     </div>
@@ -100,14 +101,31 @@ const defaultRows = () => [
 ]
 
 const weekLabel = ref('')
+const startDate = ref('')
 const rows = reactive(defaultRows())
 const history = reactive([])
 let saving = false
+
+function onDatePick() {
+  if (!startDate.value) return
+  const d = new Date(startDate.value)
+  // Snap to Monday of the selected week
+  const day = d.getDay()
+  const diff = day === 0 ? -6 : 1 - day
+  d.setDate(d.getDate() + diff)
+  const end = new Date(d)
+  end.setDate(end.getDate() + 6)
+  const fmt = (dt) => dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  weekLabel.value = `${fmt(d)} – ${fmt(end)}`
+  // Update startDate to the actual Monday
+  startDate.value = d.toISOString().split('T')[0]
+}
 
 onMounted(async () => {
   const data = await loadUserData(props.uid, 'tracker')
   if (data) {
     weekLabel.value = data.weekLabel || ''
+    startDate.value = data.startDate || ''
     if (data.rows) rows.splice(0, rows.length, ...data.rows)
     if (data.history) history.splice(0, history.length, ...data.history)
   }
@@ -116,7 +134,7 @@ onMounted(async () => {
 async function persist() {
   if (saving) return
   saving = true
-  await saveUserData(props.uid, 'tracker', { weekLabel: weekLabel.value, rows: JSON.parse(JSON.stringify(rows)), history: JSON.parse(JSON.stringify(history)) })
+  await saveUserData(props.uid, 'tracker', { weekLabel: weekLabel.value, startDate: startDate.value, rows: JSON.parse(JSON.stringify(rows)), history: JSON.parse(JSON.stringify(history)) })
   saving = false
 }
 
@@ -128,6 +146,7 @@ function newWeek() {
     history.push({ label: weekLabel.value, rows: JSON.parse(JSON.stringify(rows)) })
   }
   weekLabel.value = ''
+  startDate.value = ''
   rows.splice(0, rows.length, ...defaultRows())
   persist()
 }
@@ -166,7 +185,27 @@ const avgJump = computed(() => {
   color: var(--text-h);
 }
 
-.week-input { width: 180px; }
+.date-picker {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text-h);
+  border-radius: 8px;
+  padding: 7px 10px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.date-picker:focus { border-color: var(--accent); outline: none; }
+
+.week-range-badge {
+  background: var(--accent);
+  color: #fff;
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
 
 .new-week-btn {
   background: var(--accent);
