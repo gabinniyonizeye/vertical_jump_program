@@ -25,6 +25,19 @@
           <tr v-for="row in rows" :key="row.day">
             <td class="day-cell">
               <span class="badge" :style="{ background: row.color + '22', color: row.color }">{{ row.day }}</span>
+              <!-- Toggle for gym days -->
+              <div v-if="row.isGymDay" class="session-toggle">
+                <button
+                  class="toggle-btn" :class="{ active: !row.swappedToAirAlert }"
+                  @click="row.swappedToAirAlert = false">
+                  🏋️ Gym
+                </button>
+                <button
+                  class="toggle-btn" :class="{ active: row.swappedToAirAlert }"
+                  @click="row.swappedToAirAlert = true">
+                  🏃 Air Alert
+                </button>
+              </div>
             </td>
             <td class="center-cell">
               <button class="done-btn" :class="{ checked: row.done }" @click="row.done = !row.done">
@@ -32,7 +45,8 @@
               </button>
             </td>
             <td><input v-model="row.energy" type="number" min="1" max="10" placeholder="—" /></td>
-            <td><input v-model="row.lift" :placeholder="row.liftPlaceholder" /></td>
+            <td><input v-model="row.lift"
+              :placeholder="row.swappedToAirAlert ? 'Air Alert ✓' : row.liftPlaceholder" /></td>
             <td><input v-model="row.jumpFeel" type="number" min="1" max="10" placeholder="—" /></td>
             <td><input v-model="row.notes" placeholder="Notes…" /></td>
           </tr>
@@ -91,13 +105,13 @@ import { loadUserData, saveUserData } from '../useAuth.js'
 const props = defineProps({ uid: String })
 
 const defaultRows = () => [
-  { day: 'Monday',    color: '#f97316', liftPlaceholder: 'Squat: ___kg',      done: false, energy: '', lift: '', jumpFeel: '', notes: '' },
-  { day: 'Tuesday',   color: '#6366f1', liftPlaceholder: 'Air Alert',         done: false, energy: '', lift: '', jumpFeel: '', notes: '' },
-  { day: 'Wednesday', color: '#3b82f6', liftPlaceholder: 'Deadlift: ___kg',   done: false, energy: '', lift: '', jumpFeel: '', notes: '' },
-  { day: 'Thursday',  color: '#6366f1', liftPlaceholder: 'Air Alert',         done: false, energy: '', lift: '', jumpFeel: '', notes: '' },
-  { day: 'Friday',    color: '#6366f1', liftPlaceholder: 'Air Alert',         done: false, energy: '', lift: '', jumpFeel: '', notes: '' },
-  { day: 'Saturday',  color: '#22c55e', liftPlaceholder: 'Power Move: ___kg', done: false, energy: '', lift: '', jumpFeel: '', notes: '' },
-  { day: 'Sunday',    color: '#eab308', liftPlaceholder: 'Recovery',          done: false, energy: '', lift: '', jumpFeel: '', notes: '' },
+  { day: 'Monday',    color: '#f97316', liftPlaceholder: 'Squat: ___kg',      done: false, energy: '', lift: '', jumpFeel: '', notes: '', isGymDay: true,  swappedToAirAlert: false },
+  { day: 'Tuesday',   color: '#6366f1', liftPlaceholder: 'Air Alert',         done: false, energy: '', lift: '', jumpFeel: '', notes: '', isGymDay: false, swappedToAirAlert: false },
+  { day: 'Wednesday', color: '#3b82f6', liftPlaceholder: 'Deadlift: ___kg',   done: false, energy: '', lift: '', jumpFeel: '', notes: '', isGymDay: true,  swappedToAirAlert: false },
+  { day: 'Thursday',  color: '#6366f1', liftPlaceholder: 'Air Alert',         done: false, energy: '', lift: '', jumpFeel: '', notes: '', isGymDay: false, swappedToAirAlert: false },
+  { day: 'Friday',    color: '#6366f1', liftPlaceholder: 'Air Alert',         done: false, energy: '', lift: '', jumpFeel: '', notes: '', isGymDay: false, swappedToAirAlert: false },
+  { day: 'Saturday',  color: '#22c55e', liftPlaceholder: 'Power Move: ___kg', done: false, energy: '', lift: '', jumpFeel: '', notes: '', isGymDay: true,  swappedToAirAlert: false },
+  { day: 'Sunday',    color: '#eab308', liftPlaceholder: 'Recovery',          done: false, energy: '', lift: '', jumpFeel: '', notes: '', isGymDay: false, swappedToAirAlert: false },
 ]
 
 const weekLabel = ref('')
@@ -241,7 +255,28 @@ td {
 
 td input { padding: 6px 10px; font-size: 13px; }
 
-.day-cell { white-space: nowrap; }
+.session-toggle {
+  display: flex;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.toggle-btn {
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  transition: all 0.2s;
+  cursor: pointer;
+}
+.toggle-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
 .center-cell { text-align: center; }
 
 .done-btn {
