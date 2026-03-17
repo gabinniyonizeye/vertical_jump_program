@@ -23,25 +23,30 @@
         </thead>
         <tbody>
           <tr v-for="row in rows" :key="row.day"
-            :class="{ 'swapped-row': row.swappedToAirAlert }">
+            :class="{ 'swapped-row': row.swappedToAirAlert, 'swapped-gym-row': row.swappedToGym }">
             <td class="day-cell">
-              <span class="badge" :style="{ background: (row.swappedToAirAlert ? '#6366f1' : row.color) + '22', color: row.swappedToAirAlert ? '#6366f1' : row.color }">
+              <span class="badge" :style="{ background: (row.swappedToAirAlert ? '#6366f1' : row.swappedToGym ? '#f97316' : row.color) + '22', color: row.swappedToAirAlert ? '#6366f1' : row.swappedToGym ? '#f97316' : row.color }">
                 {{ row.day }}
               </span>
-              <div class="session-type-label" :style="{ color: row.swappedToAirAlert ? '#6366f1' : row.color }">
-                {{ row.swappedToAirAlert ? '🏃 Air Alert' : row.isGymDay ? '🏋️ Gym' : row.liftPlaceholder === 'Air Alert' ? '🏃 Air Alert' : '😴 Recovery' }}
+              <div class="session-type-label" :style="{ color: row.swappedToAirAlert ? '#6366f1' : row.swappedToGym ? '#f97316' : row.color }">
+                {{ row.swappedToAirAlert ? '🏃 Air Alert' : row.swappedToGym ? '🏋️ Gym' : row.isGymDay ? '🏋️ Gym' : row.isAirAlertDay ? '🏃 Air Alert' : '😴 Recovery' }}
               </div>
               <!-- Toggle for gym days -->
               <div v-if="row.isGymDay" class="session-toggle">
-                <button
-                  class="toggle-btn" :class="{ active: !row.swappedToAirAlert }"
-                  @click="row.swappedToAirAlert = false">
+                <button class="toggle-btn" :class="{ active: !row.swappedToAirAlert }" @click="row.swappedToAirAlert = false">
                   🏋️ Gym
                 </button>
-                <button
-                  class="toggle-btn air" :class="{ active: row.swappedToAirAlert }"
-                  @click="row.swappedToAirAlert = true">
+                <button class="toggle-btn air" :class="{ active: row.swappedToAirAlert }" @click="row.swappedToAirAlert = true">
                   🏃 Air Alert
+                </button>
+              </div>
+              <!-- Toggle for Air Alert days -->
+              <div v-if="row.isAirAlertDay" class="session-toggle">
+                <button class="toggle-btn air" :class="{ active: !row.swappedToGym }" @click="row.swappedToGym = false">
+                  🏃 Air Alert
+                </button>
+                <button class="toggle-btn" :class="{ active: row.swappedToGym }" @click="row.swappedToGym = true">
+                  🏋️ Gym
                 </button>
               </div>
             </td>
@@ -52,7 +57,7 @@
             </td>
             <td><input v-model="row.energy" type="number" min="1" max="10" placeholder="—" /></td>
             <td><input v-model="row.lift"
-              :placeholder="row.swappedToAirAlert ? 'Air Alert ✓' : row.liftPlaceholder" /></td>
+              :placeholder="row.swappedToAirAlert ? 'Air Alert ✓' : row.swappedToGym ? 'Lift: ___kg' : row.liftPlaceholder" /></td>
             <td><input v-model="row.jumpFeel" type="number" min="1" max="10" placeholder="—" /></td>
             <td><input v-model="row.notes" placeholder="Notes…" /></td>
           </tr>
@@ -111,13 +116,13 @@ import { loadUserData, saveUserData } from '../useAuth.js'
 const props = defineProps({ uid: String })
 
 const defaultRows = () => [
-  { day: 'Monday',    color: '#f97316', liftPlaceholder: 'Squat: ___kg',      done: false, energy: '', lift: '', jumpFeel: '', notes: '', isGymDay: true,  swappedToAirAlert: false },
-  { day: 'Tuesday',   color: '#6366f1', liftPlaceholder: 'Air Alert',         done: false, energy: '', lift: '', jumpFeel: '', notes: '', isGymDay: false, swappedToAirAlert: false },
-  { day: 'Wednesday', color: '#3b82f6', liftPlaceholder: 'Deadlift: ___kg',   done: false, energy: '', lift: '', jumpFeel: '', notes: '', isGymDay: true,  swappedToAirAlert: false },
-  { day: 'Thursday',  color: '#6366f1', liftPlaceholder: 'Air Alert',         done: false, energy: '', lift: '', jumpFeel: '', notes: '', isGymDay: false, swappedToAirAlert: false },
-  { day: 'Friday',    color: '#6366f1', liftPlaceholder: 'Air Alert',         done: false, energy: '', lift: '', jumpFeel: '', notes: '', isGymDay: false, swappedToAirAlert: false },
-  { day: 'Saturday',  color: '#22c55e', liftPlaceholder: 'Power Move: ___kg', done: false, energy: '', lift: '', jumpFeel: '', notes: '', isGymDay: true,  swappedToAirAlert: false },
-  { day: 'Sunday',    color: '#eab308', liftPlaceholder: 'Recovery',          done: false, energy: '', lift: '', jumpFeel: '', notes: '', isGymDay: false, swappedToAirAlert: false },
+  { day: 'Monday',    color: '#f97316', liftPlaceholder: 'Squat: ___kg',      done: false, energy: '', lift: '', jumpFeel: '', notes: '', isGymDay: true,  isAirAlertDay: false, swappedToAirAlert: false, swappedToGym: false },
+  { day: 'Tuesday',   color: '#6366f1', liftPlaceholder: 'Air Alert',         done: false, energy: '', lift: '', jumpFeel: '', notes: '', isGymDay: false, isAirAlertDay: true,  swappedToAirAlert: false, swappedToGym: false },
+  { day: 'Wednesday', color: '#3b82f6', liftPlaceholder: 'Deadlift: ___kg',   done: false, energy: '', lift: '', jumpFeel: '', notes: '', isGymDay: true,  isAirAlertDay: false, swappedToAirAlert: false, swappedToGym: false },
+  { day: 'Thursday',  color: '#6366f1', liftPlaceholder: 'Air Alert',         done: false, energy: '', lift: '', jumpFeel: '', notes: '', isGymDay: false, isAirAlertDay: true,  swappedToAirAlert: false, swappedToGym: false },
+  { day: 'Friday',    color: '#6366f1', liftPlaceholder: 'Air Alert',         done: false, energy: '', lift: '', jumpFeel: '', notes: '', isGymDay: false, isAirAlertDay: true,  swappedToAirAlert: false, swappedToGym: false },
+  { day: 'Saturday',  color: '#22c55e', liftPlaceholder: 'Power Move: ___kg', done: false, energy: '', lift: '', jumpFeel: '', notes: '', isGymDay: true,  isAirAlertDay: false, swappedToAirAlert: false, swappedToGym: false },
+  { day: 'Sunday',    color: '#eab308', liftPlaceholder: 'Recovery',          done: false, energy: '', lift: '', jumpFeel: '', notes: '', isGymDay: false, isAirAlertDay: false, swappedToAirAlert: false, swappedToGym: false },
 ]
 
 const weekLabel = ref('')
@@ -302,6 +307,7 @@ td input { padding: 6px 10px; font-size: 13px; }
 }
 
 .swapped-row td { background: #6366f115; }
+.swapped-gym-row td { background: #f9731615; }
 .center-cell { text-align: center; }
 
 .done-btn {
