@@ -166,7 +166,7 @@ const workouts = [
       { name: 'Step-Ups (Single Leg)', sets: '3 × 8 / leg',    totalSets: 3, tip: 'Drive through the heel of the working leg.',
         video: { id: 'wrwwXE_x-pQ', label: 'Step-Up Tutorial — Jeff Nippard' } },
       { name: 'Farmers Carry',         sets: '2 × 30–40 m',    totalSets: 2, note: 'Optional',
-        video: { id: 'rt0UBGBhzQs', label: 'Farmers Carry — Alan Thrall' } },
+        video: { id: 'pO_a0FxKHBQ', label: 'Farmers Carry — Athlean-X' } },
     ]
   },
   {
@@ -174,11 +174,11 @@ const workouts = [
     focus: 'Turn strength into vertical power',
     exercises: [
       { name: 'Power Cleans / KB Swings', sets: '4 × 3–5 reps',   totalSets: 4, tip: 'Explosive hip extension. Speed > weight here.',
-        video: { id: 'ySFbZnMKTtw', label: 'Kettlebell Swing Tutorial — Jeff Cavaliere' } },
+        video: { id: 'YSxHifyI6s8', label: 'Kettlebell Swing — Athlean-X' } },
       { name: 'Weighted Jump Squats',     sets: '4 × 5–6 reps',   totalSets: 4, note: 'Light weight, explosive', tip: 'Use 20–30% of squat max. Jump as high as possible.',
         video: { id: 'CVaEhXotL7M', label: 'Jump Squat for Vertical — Jump Science' } },
       { name: 'Depth / Drop Jumps',       sets: '3 × 4–6 reps',   totalSets: 3, tip: 'Minimal ground contact time. React like the floor is hot.',
-        video: { id: 'XQqVoNXdSoQ', label: 'Depth Jump Tutorial — Jump Science' } },
+        video: { id: 'urGLMOOJO5Y', label: 'Depth Jump Tutorial — Overtime Athletes' } },
       { name: 'Walking Lunges',           sets: '3 × 10 / leg',   totalSets: 3,
         video: { id: 'L8fvypPrzzs', label: 'Walking Lunge Form — Jeff Nippard' } },
       { name: 'Seated Calf Raises',       sets: '4 × 10–15 reps', totalSets: 4, note: 'Heavy',
