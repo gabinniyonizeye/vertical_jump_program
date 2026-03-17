@@ -13,7 +13,8 @@
       </button>
     </div>
 
-    <div v-for="w in workouts" :key="w.day" v-if="active === w.day">
+    <template v-for="w in workouts" :key="w.day">
+      <div v-if="active === w.day">
       <div class="workout-header card" :style="{ borderColor: w.color }">
         <div>
           <div class="workout-day" :style="{ color: w.color }">{{ w.day }} — {{ w.subtitle }}</div>
@@ -100,9 +101,8 @@
         </div>
         <RestTimer />
       </div>
-    </div>
-
-    <!-- Video Modal -->
+      </div>
+    </template>
     <Teleport to="body">
       <div v-if="activeVideo" class="modal-overlay" @click.self="activeVideo = null">
         <div class="modal-box">
