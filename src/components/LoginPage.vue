@@ -70,11 +70,11 @@ const password = ref('')
 const paidCheck = ref(false)
 const err = ref('')
 
-function doLogin() {
+async function doLogin() {
   err.value = ''
-  const res = login(email.value, password.value)
+  const res = await login(email.value, password.value)
   if (res.ok) {
-    emit('logged-in', res.session)
+    emit('logged-in')
   } else if (res.error === 'pending') {
     err.value = '⏳ Your account is pending admin approval.'
   } else if (res.error === 'rejected') {
@@ -84,10 +84,10 @@ function doLogin() {
   }
 }
 
-function doSignup() {
+async function doSignup() {
   err.value = ''
   if (!paidCheck.value) { err.value = 'Please confirm you have paid.'; return }
-  const res = signup(name.value, email.value, password.value)
+  const res = await signup(name.value, email.value, password.value)
   if (res.ok) {
     mode.value = 'done'
   } else {

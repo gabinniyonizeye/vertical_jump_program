@@ -84,9 +84,10 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, watch } from 'vue'
+import { ref, reactive, computed, watch, onMounted } from 'vue'
+import { loadUserData, saveUserData } from '../useAuth.js'
 
-const STORAGE_KEY = () => `vjp_weekly_tracker_${window.__vjp_uid || 'guest'}`
+const props = defineProps({ uid: String })
 
 const defaultRows = () => [
   { day: 'Monday',    color: '#f97316', liftPlaceholder: 'Squat: ___kg',      done: false, energy: '', lift: '', jumpFeel: '', notes: '' },
@@ -98,31 +99,37 @@ const defaultRows = () => [
   { day: 'Sunday',    color: '#eab308', liftPlaceholder: 'Recovery',          done: false, energy: '', lift: '', jumpFeel: '', notes: '' },
 ]
 
-const saved = JSON.parse(localStorage.getItem(STORAGE_KEY()) || 'null')
-const weekLabel = ref(saved?.weekLabel || '')
-const rows = reactive(saved?.rows || defaultRows())
+const weekLabel = ref('')
+const rows = reactive(defaultRows())
+const history = reactive([])
+let saving = false
 
-watch([weekLabel, rows], () => {
-  localStorage.setItem(STORAGE_KEY(), JSON.stringify({ weekLabel: weekLabel.value, rows }))
-}, { deep: true })
+onMounted(async () => {
+  const data = await loadUserData(props.uid, 'tracker')
+  if (data) {
+    weekLabel.value = data.weekLabel || ''
+    if (data.rows) rows.splice(0, rows.length, ...data.rows)
+    if (data.history) history.splice(0, history.length, ...data.history)
+  }
+})
 
-const historyKey = () => `vjp_history_${window.__vjp_uid || 'guest'}`
-const history = reactive(JSON.parse(localStorage.getItem(historyKey()) || '[]'))
-
-function saveHistory() {
-  localStorage.setItem(historyKey(), JSON.stringify(history))
+async function persist() {
+  if (saving) return
+  saving = true
+  await saveUserData(props.uid, 'tracker', { weekLabel: weekLabel.value, rows: JSON.parse(JSON.stringify(rows)), history: JSON.parse(JSON.stringify(history)) })
+  saving = false
 }
+
+watch([weekLabel, rows], persist, { deep: true })
 
 function newWeek() {
   if (!confirm('Start a new week? Current data will be archived.')) return
-  // Archive current week
   if (rows.some(r => r.done || r.energy || r.lift)) {
     history.push({ label: weekLabel.value, rows: JSON.parse(JSON.stringify(rows)) })
-    saveHistory()
   }
   weekLabel.value = ''
-  const fresh = defaultRows()
-  rows.splice(0, rows.length, ...fresh)
+  rows.splice(0, rows.length, ...defaultRows())
+  persist()
 }
 
 function avgOf(rowArr, field) {
@@ -131,12 +138,10 @@ function avgOf(rowArr, field) {
 }
 
 const doneCount = computed(() => rows.filter(r => r.done).length)
-
 const avgEnergy = computed(() => {
   const vals = rows.map(r => Number(r.energy)).filter(v => v > 0)
   return vals.length ? (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1) : null
 })
-
 const avgJump = computed(() => {
   const vals = rows.map(r => Number(r.jumpFeel)).filter(v => v > 0)
   return vals.length ? (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1) : null

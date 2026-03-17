@@ -206,27 +206,25 @@
 </template>
 
 <script setup>
-import { ref, reactive, watch } from 'vue'
+import { ref, reactive, watch, onMounted } from 'vue'
+import { loadUserData, saveUserData } from '../useAuth.js'
 
-const SK = () => `vjp_airalert_${window.__vjp_uid || 'guest'}`
-const saved = JSON.parse(localStorage.getItem(SK()) || 'null')
+const props = defineProps({ uid: String })
 
-const committed    = ref(saved?.committed || false)
-const commitName   = ref(saved?.commitName || '')
-const goalPerWeek  = ref(saved?.goalPerWeek || '')
-const goalTotal    = ref(saved?.goalTotal || '')
-const goalStatement = ref(saved?.goalStatement || '')
-const startingLeap = ref(saved?.startingLeap || '')
-
-const progress = reactive(
-  saved?.progress || Array.from({ length: 15 }, () => ({ date: '', height: '' }))
-)
+const committed     = ref(false)
+const commitName    = ref('')
+const goalPerWeek   = ref('')
+const goalTotal     = ref('')
+const goalStatement = ref('')
+const startingLeap  = ref('')
+const progress = reactive(Array.from({ length: 15 }, () => ({ date: '', height: '' })))
+let saving = false
 
 function mk(leapUps, calfRaises, stepUps, thrustUps, burnouts, squatHops) {
   return { leapUps, calfRaises, stepUps, thrustUps, burnouts, squatHops, done: false, date: '' }
 }
 
-const oddWeeks = reactive(saved?.oddWeeks || [
+const oddWeeks = reactive([
   { week: 1,  ...mk({sets:2,reps:20},{sets:2,reps:10},{sets:2,reps:10},{sets:2,reps:15},{sets:1,reps:100},{sets:4,reps:15}) },
   { week: 3,  ...mk({sets:3,reps:25},{sets:2,reps:20},{sets:2,reps:15},{sets:2,reps:25},{sets:1,reps:300},{sets:4,reps:20}) },
   { week: 5,  ...mk({sets:4,reps:25},{sets:2,reps:30},{sets:2,reps:20},{sets:2,reps:35},{sets:2,reps:250},{sets:4,reps:25}) },
@@ -237,7 +235,7 @@ const oddWeeks = reactive(saved?.oddWeeks || [
   { week: 15, ...mk({sets:8,reps:50},{sets:5,reps:40},{sets:4,reps:25},{sets:4,reps:50},{sets:5,reps:300},{sets:4,reps:50}) },
 ])
 
-const evenWeeks = reactive(saved?.evenWeeks || [
+const evenWeeks = reactive([
   { week: 2,  ...mk({sets:3,reps:20},{sets:2,reps:15},{sets:2,reps:15},{sets:2,reps:20},{sets:1,reps:200},{sets:4,reps:20}) },
   { week: 4,  ...mk({sets:3,reps:30},{sets:2,reps:25},{sets:2,reps:20},{sets:2,reps:30},{sets:2,reps:200},{sets:4,reps:20}) },
   { week: 6,  ...mk({sets:3,reps:35},{sets:2,reps:35},{sets:2,reps:25},{sets:2,reps:40},{sets:2,reps:300},{sets:4,reps:30}) },
@@ -247,17 +245,36 @@ const evenWeeks = reactive(saved?.evenWeeks || [
   { week: 14, ...mk({sets:8,reps:40},{sets:4,reps:35},{sets:2,reps:40},{sets:2,reps:100},{sets:4,reps:350},{sets:5,reps:40}) },
 ])
 
-function saveCommit() { save() }
+onMounted(async () => {
+  const data = await loadUserData(props.uid, 'airalert')
+  if (data) {
+    committed.value     = data.committed || false
+    commitName.value    = data.commitName || ''
+    goalPerWeek.value   = data.goalPerWeek || ''
+    goalTotal.value     = data.goalTotal || ''
+    goalStatement.value = data.goalStatement || ''
+    startingLeap.value  = data.startingLeap || ''
+    if (data.progress)  progress.splice(0, progress.length, ...data.progress)
+    if (data.oddWeeks)  oddWeeks.splice(0, oddWeeks.length, ...data.oddWeeks)
+    if (data.evenWeeks) evenWeeks.splice(0, evenWeeks.length, ...data.evenWeeks)
+  }
+})
 
-function save() {
-  localStorage.setItem(SK(), JSON.stringify({
+async function save() {
+  if (saving) return
+  saving = true
+  await saveUserData(props.uid, 'airalert', {
     committed: committed.value, commitName: commitName.value,
     goalPerWeek: goalPerWeek.value, goalTotal: goalTotal.value,
     goalStatement: goalStatement.value, startingLeap: startingLeap.value,
-    progress, oddWeeks, evenWeeks
-  }))
+    progress: JSON.parse(JSON.stringify(progress)),
+    oddWeeks: JSON.parse(JSON.stringify(oddWeeks)),
+    evenWeeks: JSON.parse(JSON.stringify(evenWeeks))
+  })
+  saving = false
 }
 
+function saveCommit() { save() }
 watch([committed, commitName, goalPerWeek, goalTotal, goalStatement, startingLeap, progress, oddWeeks, evenWeeks], save, { deep: true })
 </script>
 

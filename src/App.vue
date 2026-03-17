@@ -1,12 +1,29 @@
 <template>
-  <!-- Not logged in -->
-  <LoginPage v-if="!session" @logged-in="onLogin" />
+  <div v-if="loading" class="splash">
+    <div class="splash-icon">🏀</div>
+    <div class="splash-text">Loading…</div>
+  </div>
 
-  <!-- Logged in but pending -->
-  <PendingPage v-else-if="session.role === 'user' && isPending" :session="session" @logout="doLogout" />
+  <!-- Not logged in -->
+  <LoginPage v-else-if="!user" @logged-in="onLogin" />
+
+  <!-- Pending approval -->
+  <PendingPage v-else-if="user && userProfile && userProfile.status === 'pending'"
+    :session="userProfile" @logout="doLogout" />
+
+  <!-- Rejected -->
+  <div v-else-if="user && userProfile && userProfile.status === 'rejected'" class="rejected-wrap">
+    <div class="card rejected-card">
+      <div style="font-size:40px">❌</div>
+      <div class="rej-title">Account Not Approved</div>
+      <p class="rej-desc">Your account was not approved. Please contact the admin on WhatsApp to resolve this.</p>
+      <a href="https://wa.me/780960424" target="_blank" class="wa-btn">💬 WhatsApp: +780960424</a>
+      <button class="logout-btn" @click="doLogout">Logout</button>
+    </div>
+  </div>
 
   <!-- Admin -->
-  <div v-else-if="session.role === 'admin'" id="app">
+  <div v-else-if="user && isAdmin(user.email)" id="app">
     <header class="app-header">
       <div class="header-inner">
         <div class="logo">
@@ -25,7 +42,7 @@
   </div>
 
   <!-- Regular confirmed user -->
-  <div v-else id="app">
+  <div v-else-if="user && userProfile" id="app">
     <header class="app-header">
       <div class="header-inner">
         <div class="logo">
@@ -39,20 +56,16 @@
           <span class="badge" :style="{ background: todayColor + '22', color: todayColor }">
             Today: {{ todayName }}
           </span>
-          <span class="user-name-badge">👤 {{ session.name }}</span>
+          <span class="user-name-badge">👤 {{ userProfile.name }}</span>
           <button class="logout-btn" @click="doLogout">Logout</button>
         </div>
       </div>
       <nav class="tabs">
         <button
-          v-for="tab in tabs"
-          :key="tab.id"
-          class="tab"
-          :class="{ active: activeTab === tab.id }"
+          v-for="tab in tabs" :key="tab.id"
+          class="tab" :class="{ active: activeTab === tab.id }"
           @click="activeTab = tab.id"
-        >
-          {{ tab.icon }} {{ tab.label }}
-        </button>
+        >{{ tab.icon }} {{ tab.label }}</button>
       </nav>
     </header>
 
@@ -67,23 +80,23 @@
       </div>
       <div v-if="activeTab === 'tracker'">
         <div class="section-title">📊 Weekly Tracker</div>
-        <WeeklyTracker />
+        <WeeklyTracker :uid="user.uid" />
       </div>
       <div v-if="activeTab === 'performance'">
         <div class="section-title">📈 Performance & Recovery</div>
-        <PerformanceTracker />
+        <PerformanceTracker :uid="user.uid" />
       </div>
       <div v-if="activeTab === 'airalert'">
         <div class="section-title">🏃 Air Alert® Program</div>
-        <AirAlert />
+        <AirAlert :uid="user.uid" />
       </div>
     </main>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
-import { getSession, logout, adminGetUsers } from './useAuth.js'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { onAuthChange, logout, getUserProfile, isAdmin } from './useAuth.js'
 import LoginPage from './components/LoginPage.vue'
 import PendingPage from './components/PendingPage.vue'
 import AdminPanel from './components/AdminPanel.vue'
@@ -93,36 +106,38 @@ import WeeklyTracker from './components/WeeklyTracker.vue'
 import PerformanceTracker from './components/PerformanceTracker.vue'
 import AirAlert from './components/AirAlert.vue'
 
-const session = ref(getSession())
+const loading = ref(true)
+const user = ref(null)
+const userProfile = ref(null)
 
-// Per-user localStorage prefix — all child components use keys prefixed with userId
-// so each user's data is isolated
-const isPending = computed(() => {
-  if (!session.value || session.value.role !== 'user') return false
-  const users = adminGetUsers()
-  const u = users.find(u => u.id === session.value.id)
-  return !u || u.status !== 'confirmed'
+let unsubscribe = null
+
+onMounted(() => {
+  unsubscribe = onAuthChange(async (firebaseUser) => {
+    if (firebaseUser) {
+      user.value = firebaseUser
+      if (!isAdmin(firebaseUser.email)) {
+        userProfile.value = await getUserProfile(firebaseUser.uid)
+      } else {
+        userProfile.value = { name: 'Admin', status: 'confirmed' }
+      }
+    } else {
+      user.value = null
+      userProfile.value = null
+    }
+    loading.value = false
+  })
 })
 
-// Inject user-scoped storage prefix so child components can use it
-// We patch localStorage keys by setting a global prefix read by components
-function setUserScope(userId) {
-  window.__vjp_uid = userId || ''
+onUnmounted(() => { if (unsubscribe) unsubscribe() })
+
+async function onLogin() {
+  // auth state change handled by onAuthChange above
 }
 
-function onLogin(s) {
-  session.value = s
-  if (s.role === 'user') setUserScope(s.id)
+async function doLogout() {
+  await logout()
 }
-
-function doLogout() {
-  logout()
-  session.value = null
-  setUserScope('')
-}
-
-// Restore scope on page load
-if (session.value?.role === 'user') setUserScope(session.value.id)
 
 const tabs = [
   { id: 'schedule',    icon: '📅', label: 'Schedule' },
@@ -131,11 +146,10 @@ const tabs = [
   { id: 'performance', icon: '📈', label: 'Performance' },
   { id: 'airalert',    icon: '🏃', label: 'Air Alert®' },
 ]
-
 const activeTab = ref('schedule')
 
 const dayColors = {
-  Monday: '#ef4444', Tuesday: '#6366f1', Wednesday: '#3b82f6',
+  Monday: '#f97316', Tuesday: '#6366f1', Wednesday: '#3b82f6',
   Thursday: '#6366f1', Friday: '#6366f1', Saturday: '#22c55e', Sunday: '#eab308'
 }
 const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
@@ -148,6 +162,45 @@ function goToWorkout(day) {
 </script>
 
 <style>
+.splash {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+.splash-icon { font-size: 56px; animation: pulse 1.2s infinite; }
+.splash-text { color: var(--text); font-size: 16px; }
+@keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+
+.rejected-wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.rejected-card {
+  max-width: 420px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: center;
+}
+.rej-title { font-size: 20px; font-weight: 700; color: var(--text-h); }
+.rej-desc { font-size: 14px; color: var(--text); line-height: 1.6; }
+.wa-btn {
+  background: #22c55e;
+  color: #fff;
+  font-weight: 700;
+  font-size: 15px;
+  padding: 11px 20px;
+  border-radius: 8px;
+  text-decoration: none;
+}
+
 .app-header {
   position: sticky;
   top: 0;
@@ -157,23 +210,18 @@ function goToWorkout(day) {
   padding: 16px 0 0;
   margin-bottom: 24px;
 }
-
 .header-inner {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 14px;
 }
-
 .logo { display: flex; align-items: center; gap: 12px; }
 .logo-icon { font-size: 28px; }
 .logo-title { font-size: 18px; font-weight: 700; color: var(--text-h); }
 .logo-sub { font-size: 12px; color: var(--text); }
-
 .header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-
 .user-name-badge { font-size: 13px; color: var(--text); font-weight: 600; }
-
 .logout-btn {
   background: var(--surface2);
   border: 1px solid var(--border);
@@ -184,15 +232,8 @@ function goToWorkout(day) {
   font-weight: 600;
   transition: all 0.2s;
 }
-.logout-btn:hover { color: var(--red); border-color: var(--red); }
-
-.tabs {
-  display: flex;
-  gap: 4px;
-  overflow-x: auto;
-  padding-bottom: 1px;
-}
-
+.logout-btn:hover { color: var(--accent); border-color: var(--accent); }
+.tabs { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 1px; }
 .tab {
   padding: 9px 18px;
   border-radius: 8px 8px 0 0;
@@ -205,22 +246,13 @@ function goToWorkout(day) {
   white-space: nowrap;
   transition: all 0.2s;
 }
-
 .tab:hover { color: var(--text-h); background: var(--surface); }
-
 .tab.active {
   background: var(--surface);
   color: var(--accent);
   border-color: var(--border);
   border-bottom-color: var(--surface);
 }
-
 .main-content { padding-top: 4px; }
-
-.section-title {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--text-h);
-  margin-bottom: 16px;
-}
+.section-title { font-size: 20px; font-weight: 700; color: var(--text-h); margin-bottom: 16px; }
 </style>

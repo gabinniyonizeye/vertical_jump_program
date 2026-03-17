@@ -106,50 +106,58 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, watch } from 'vue'
+import { ref, reactive, computed, watch, onMounted } from 'vue'
+import { loadUserData, saveUserData } from '../useAuth.js'
 
-const STORAGE_KEY = () => `vjp_performance_${window.__vjp_uid || 'guest'}`
+const props = defineProps({ uid: String })
 
-const saved = JSON.parse(localStorage.getItem(STORAGE_KEY()) || 'null')
-const entries = ref(saved?.entries || Array(6).fill(''))
-
-const recovery = reactive(saved?.recovery || [
+const entries = ref(Array(6).fill(''))
+const recovery = reactive([
   { label: 'Sleep 7–9 hours', sub: 'Non-negotiable for muscle repair', checked: false },
   { label: 'Protein ~1.6–2g/kg', sub: 'Hit your daily target', checked: false },
   { label: 'No crash dieting', sub: 'Lose fat slowly if needed (2–4 kg max)', checked: false },
 ])
+let saving = false
 
-watch([entries, recovery], () => {
-  localStorage.setItem(STORAGE_KEY(), JSON.stringify({ entries: entries.value, recovery }))
-}, { deep: true })
+onMounted(async () => {
+  const data = await loadUserData(props.uid, 'performance')
+  if (data) {
+    if (data.entries) entries.value = data.entries
+    if (data.recovery) recovery.splice(0, recovery.length, ...data.recovery)
+  }
+})
+
+async function persist() {
+  if (saving) return
+  saving = true
+  await saveUserData(props.uid, 'performance', { entries: entries.value, recovery: JSON.parse(JSON.stringify(recovery)) })
+  saving = false
+}
+
+watch([entries, recovery], persist, { deep: true })
 
 function addWeek() { entries.value.push('') }
 function clearAll() {
-  if (confirm('Clear all jump data?')) entries.value = Array(6).fill('')
+  if (confirm('Clear all jump data?')) { entries.value = Array(6).fill(''); persist() }
 }
 
 const filledEntries = computed(() =>
   entries.value.map(Number).filter((v, i) => entries.value[i] !== '' && !isNaN(v) && v > 0)
 )
-
 const totalGain = computed(() => {
   if (filledEntries.value.length < 2) return 0
   return +(filledEntries.value[filledEntries.value.length - 1] - filledEntries.value[0]).toFixed(1)
 })
-
 function diffLabel(i) {
   if (i === 0 || !entries.value[i] || !entries.value[i - 1]) return ''
   const d = Number(entries.value[i]) - Number(entries.value[i - 1])
   return (d >= 0 ? '+' : '') + d.toFixed(1) + ' cm'
 }
-
 function diffClass(i) {
   if (i === 0 || !entries.value[i] || !entries.value[i - 1]) return ''
   return Number(entries.value[i]) >= Number(entries.value[i - 1]) ? 'pos' : 'neg'
 }
-
 const svgW = 400, svgH = 160, pad = 30
-
 const points = computed(() => {
   const vals = filledEntries.value
   if (vals.length < 2) return []
@@ -161,7 +169,6 @@ const points = computed(() => {
     val: v
   }))
 })
-
 const linePoints = computed(() => points.value.map(p => `${p.x},${p.y}`).join(' '))
 const areaPoints = computed(() => {
   if (!points.value.length) return ''

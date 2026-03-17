@@ -1,84 +1,99 @@
-// Central auth store — localStorage only, no backend needed
+import { auth, db } from './firebase.js'
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged
+} from 'firebase/auth'
+import {
+  doc, setDoc, getDoc, updateDoc,
+  collection, getDocs, deleteDoc, serverTimestamp
+} from 'firebase/firestore'
 
-const USERS_KEY = 'vjp_users'
-const SESSION_KEY = 'vjp_session'
+const ADMIN_EMAIL = 'gabin@admin.com'
 
-const ADMIN = { email: 'gabin@admin.com', password: 'February@1002', name: 'Admin', role: 'admin' }
-
-function getUsers() {
-  return JSON.parse(localStorage.getItem(USERS_KEY) || '[]')
+export function isAdmin(email) {
+  return email === ADMIN_EMAIL
 }
 
-function saveUsers(users) {
-  localStorage.setItem(USERS_KEY, JSON.stringify(users))
-}
-
-export function getSession() {
-  return JSON.parse(localStorage.getItem(SESSION_KEY) || 'null')
-}
-
-export function logout() {
-  localStorage.removeItem(SESSION_KEY)
-}
-
-export function login(email, password) {
-  if (email.trim().toLowerCase() === ADMIN.email && password === ADMIN.password) {
-    const session = { email: ADMIN.email, name: 'Admin', role: 'admin' }
-    localStorage.setItem(SESSION_KEY, JSON.stringify(session))
-    return { ok: true, session }
+export async function login(email, password) {
+  try {
+    const cred = await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), password)
+    if (isAdmin(cred.user.email)) return { ok: true }
+    // Check user status in Firestore
+    const snap = await getDoc(doc(db, 'users', cred.user.uid))
+    if (!snap.exists()) return { ok: false, error: 'Account not found.' }
+    const data = snap.data()
+    if (data.status === 'pending')   return { ok: false, error: 'pending' }
+    if (data.status === 'rejected')  return { ok: false, error: 'rejected' }
+    return { ok: true }
+  } catch (e) {
+    if (e.code === 'auth/user-not-found' || e.code === 'auth/invalid-credential' || e.code === 'auth/wrong-password') {
+      return { ok: false, error: 'Invalid email or password.' }
+    }
+    return { ok: false, error: e.message }
   }
-  const users = getUsers()
-  const user = users.find(u => u.email.toLowerCase() === email.trim().toLowerCase())
-  if (!user) return { ok: false, error: 'No account found with that email.' }
-  if (user.password !== password) return { ok: false, error: 'Incorrect password.' }
-  if (user.status === 'pending') return { ok: false, error: 'pending' }
-  if (user.status === 'rejected') return { ok: false, error: 'rejected' }
-  const session = { email: user.email, name: user.name, role: 'user', id: user.id }
-  localStorage.setItem(SESSION_KEY, JSON.stringify(session))
-  return { ok: true, session }
 }
 
-export function signup(name, email, password) {
-  const users = getUsers()
-  if (users.find(u => u.email.toLowerCase() === email.trim().toLowerCase())) {
-    return { ok: false, error: 'An account with this email already exists.' }
+export async function signup(name, email, password) {
+  try {
+    const cred = await createUserWithEmailAndPassword(auth, email.trim().toLowerCase(), password)
+    await setDoc(doc(db, 'users', cred.user.uid), {
+      uid: cred.user.uid,
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
+      status: 'pending',
+      paidConfirmed: false,
+      signedUpAt: serverTimestamp()
+    })
+    // Sign out immediately — must wait for admin approval
+    await signOut(auth)
+    return { ok: true }
+  } catch (e) {
+    if (e.code === 'auth/email-already-in-use') {
+      return { ok: false, error: 'An account with this email already exists.' }
+    }
+    return { ok: false, error: e.message }
   }
-  const user = {
-    id: Date.now().toString(),
-    name: name.trim(),
-    email: email.trim().toLowerCase(),
-    password,
-    status: 'pending',
-    signedUpAt: new Date().toISOString(),
-    paidConfirmed: false,
-  }
-  users.push(user)
-  saveUsers(users)
-  return { ok: true }
 }
 
-export function confirmPayment(userId) {
-  const users = getUsers()
-  const u = users.find(u => u.id === userId)
-  if (u) { u.paidConfirmed = true; saveUsers(users) }
+export async function logout() {
+  await signOut(auth)
 }
 
-// Admin actions
-export function adminGetUsers() { return getUsers() }
-
-export function adminConfirm(userId) {
-  const users = getUsers()
-  const u = users.find(u => u.id === userId)
-  if (u) { u.status = 'confirmed'; saveUsers(users) }
+export function onAuthChange(callback) {
+  return onAuthStateChanged(auth, callback)
 }
 
-export function adminReject(userId) {
-  const users = getUsers()
-  const u = users.find(u => u.id === userId)
-  if (u) { u.status = 'rejected'; saveUsers(users) }
+export async function getUserProfile(uid) {
+  const snap = await getDoc(doc(db, 'users', uid))
+  return snap.exists() ? snap.data() : null
 }
 
-export function adminDelete(userId) {
-  const users = getUsers().filter(u => u.id !== userId)
-  saveUsers(users)
+// Admin functions
+export async function adminGetUsers() {
+  const snap = await getDocs(collection(db, 'users'))
+  return snap.docs.map(d => d.data())
+}
+
+export async function adminConfirm(uid) {
+  await updateDoc(doc(db, 'users', uid), { status: 'confirmed' })
+}
+
+export async function adminReject(uid) {
+  await updateDoc(doc(db, 'users', uid), { status: 'rejected' })
+}
+
+export async function adminDelete(uid) {
+  await deleteDoc(doc(db, 'users', uid))
+}
+
+// Per-user data helpers
+export async function loadUserData(uid, key) {
+  const snap = await getDoc(doc(db, 'userData', `${uid}_${key}`))
+  return snap.exists() ? snap.data().value : null
+}
+
+export async function saveUserData(uid, key, value) {
+  await setDoc(doc(db, 'userData', `${uid}_${key}`), { value }, { merge: true })
 }
