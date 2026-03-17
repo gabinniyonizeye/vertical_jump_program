@@ -13,7 +13,7 @@
       </button>
     </div>
 
-    <div v-for="w in workouts" :key="w.day" v-show="active === w.day">
+    <div v-for="w in workouts" :key="w.day" v-if="active === w.day">
       <div class="workout-header card" :style="{ borderColor: w.color }">
         <div>
           <div class="workout-day" :style="{ color: w.color }">{{ w.day }} — {{ w.subtitle }}</div>
