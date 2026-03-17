@@ -146,7 +146,12 @@ onMounted(async () => {
   if (data) {
     weekLabel.value = data.weekLabel || ''
     startDate.value = data.startDate || ''
-    if (data.rows) rows.splice(0, rows.length, ...data.rows)
+    if (data.rows) {
+      // Merge saved rows with defaultRows so new fields (isGymDay, swappedToAirAlert) always exist
+      const defaults = defaultRows()
+      const merged = data.rows.map((saved, i) => ({ ...defaults[i], ...saved }))
+      rows.splice(0, rows.length, ...merged)
+    }
     if (data.history) history.splice(0, history.length, ...data.history)
   }
 })
