@@ -1,0 +1,71 @@
+:root {
+  --bg: #0f0f13;
+  --surface: #1a1a24;
+  --surface2: #22222f;
+  --border: #2e2e3e;
+  --text: #a0a0b8;
+  --text-h: #f0f0ff;
+  --accent: #f97316;
+  --accent2: #6366f1;
+  --green: #22c55e;
+  --red: #f97316;
+  --blue: #3b82f6;
+  --yellow: #eab308;
+  --radius: 12px;
+  --font: system-ui, 'Segoe UI', sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+#app {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 16px 80px;
+}
+
+h1, h2, h3 { color: var(--text-h); font-weight: 700; }
+
+button {
+  cursor: pointer;
+  border: none;
+  font-family: var(--font);
+}
+
+input, textarea {
+  font-family: var(--font);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text-h);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 14px;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+input:focus, textarea:focus { border-color: var(--accent); }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
