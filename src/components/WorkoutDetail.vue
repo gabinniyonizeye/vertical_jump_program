@@ -138,7 +138,7 @@ const STORAGE_KEY = 'vjp_workout_logs'
 
 const workouts = [
   {
-    day: 'Monday', subtitle: 'Strength A', color: '#ef4444',
+    day: 'Monday', subtitle: 'Strength A', color: '#f97316',
     focus: 'Raw strength = foundation for bounce',
     exercises: [
       { name: 'Back Squat',            sets: '4 × 4–6 reps',   totalSets: 4, tip: 'Break parallel. Drive knees out. Brace your core.',
@@ -187,7 +187,9 @@ const workouts = [
   },
 ]
 
-const savedLogs = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null')
+const savedLogs = (() => {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null') } catch { return null }
+})()
 
 function buildLogs() {
   const l = {}
@@ -266,7 +268,7 @@ function startSession(day) {
   }, 1000)
 }
 
-const active = ref('Monday')
+const active = ref(workouts[0].day)
 const activeVideo = ref(null)
 
 function openVideo(video) { activeVideo.value = video }
