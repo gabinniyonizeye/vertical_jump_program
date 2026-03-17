@@ -50,7 +50,7 @@
         <div class="done-icon">✅</div>
         <div class="done-title">Account submitted!</div>
         <p class="done-desc">Your signup request has been sent to the admin for review. Once confirmed, you can log in.</p>
-        <p class="done-desc">Need help? Contact us on WhatsApp: <a href="https://wa.me/780960424" target="_blank" class="wa-link">+780960424</a></p>
+        <p class="done-desc">Need help? Contact us on WhatsApp: <a href="https://wa.me/250780960424" target="_blank" class="wa-link">+780960424</a></p>
         <button class="auth-btn" @click="mode = 'login'">Back to Login</button>
       </div>
     </div>
@@ -78,7 +78,7 @@ async function doLogin() {
   } else if (res.error === 'pending') {
     err.value = '⏳ Your account is pending admin approval.'
   } else if (res.error === 'rejected') {
-    err.value = '❌ Your account was not approved. Contact admin on WhatsApp: +780960424'
+    err.value = '❌ Your account was not approved. Contact admin on WhatsApp: +250780960424'
   } else {
     err.value = res.error
   }

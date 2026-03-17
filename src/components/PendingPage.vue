@@ -18,8 +18,8 @@
       <div class="contact-box">
         <div class="contact-title">📞 Contact Admin</div>
         <p class="contact-desc">After paying, send a WhatsApp message to confirm your payment so the admin can activate your account:</p>
-        <a href="https://wa.me/780960424" target="_blank" class="wa-btn">
-          💬 WhatsApp: +780960424
+        <a href="https://wa.me/250780960424" target="_blank" class="wa-btn">
+          💬 WhatsApp: +250780960424
         </a>
       </div>
 

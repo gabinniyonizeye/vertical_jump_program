@@ -17,7 +17,7 @@
       <div style="font-size:40px">❌</div>
       <div class="rej-title">Account Not Approved</div>
       <p class="rej-desc">Your account was not approved. Please contact the admin on WhatsApp to resolve this.</p>
-      <a href="https://wa.me/780960424" target="_blank" class="wa-btn">💬 WhatsApp: +780960424</a>
+      <a href="https://wa.me/250780960424" target="_blank" class="wa-btn">💬 WhatsApp: +250780960424</a>
       <button class="logout-btn" @click="doLogout">Logout</button>
     </div>
   </div>
