@@ -22,9 +22,15 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="row in rows" :key="row.day">
+          <tr v-for="row in rows" :key="row.day"
+            :class="{ 'swapped-row': row.swappedToAirAlert }">
             <td class="day-cell">
-              <span class="badge" :style="{ background: row.color + '22', color: row.color }">{{ row.day }}</span>
+              <span class="badge" :style="{ background: (row.swappedToAirAlert ? '#6366f1' : row.color) + '22', color: row.swappedToAirAlert ? '#6366f1' : row.color }">
+                {{ row.day }}
+              </span>
+              <div class="session-type-label" :style="{ color: row.swappedToAirAlert ? '#6366f1' : row.color }">
+                {{ row.swappedToAirAlert ? '🏃 Air Alert' : row.isGymDay ? '🏋️ Gym' : row.liftPlaceholder === 'Air Alert' ? '🏃 Air Alert' : '😴 Recovery' }}
+              </div>
               <!-- Toggle for gym days -->
               <div v-if="row.isGymDay" class="session-toggle">
                 <button
@@ -33,7 +39,7 @@
                   🏋️ Gym
                 </button>
                 <button
-                  class="toggle-btn" :class="{ active: row.swappedToAirAlert }"
+                  class="toggle-btn air" :class="{ active: row.swappedToAirAlert }"
                   @click="row.swappedToAirAlert = true">
                   🏃 Air Alert
                 </button>
@@ -255,6 +261,13 @@ td {
 
 td input { padding: 6px 10px; font-size: 13px; }
 
+.session-type-label {
+  font-size: 11px;
+  font-weight: 700;
+  margin-top: 3px;
+  letter-spacing: 0.3px;
+}
+
 .session-toggle {
   display: flex;
   gap: 4px;
@@ -277,6 +290,13 @@ td input { padding: 6px 10px; font-size: 13px; }
   border-color: var(--accent);
   color: #fff;
 }
+.toggle-btn.air.active {
+  background: #6366f1;
+  border-color: #6366f1;
+  color: #fff;
+}
+
+.swapped-row td { background: #6366f115; }
 .center-cell { text-align: center; }
 
 .done-btn {
