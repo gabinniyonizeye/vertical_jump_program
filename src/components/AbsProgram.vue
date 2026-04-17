@@ -315,7 +315,7 @@ const GIF_URLS = {
   'Dead Bug':          'https://www.youtube.com/embed/bXMQkRowNk8?autoplay=1&mute=1',
   'Toe Touches':       'https://www.youtube.com/embed/9iEI95-eZWk?autoplay=1&mute=1',
   'Crunches':          'https://www.youtube.com/embed/KojXAk4lXkE?autoplay=1&mute=1',
-  'Walking':           'https://www.youtube.com/embed/njeZ29umqVE?autoplay=1&mute=1', // Walk at Home
+  'Walking':           'https://www.youtube.com/embed/AEREJOT_Mpc?autoplay=1&mute=1',
 }
 
 
