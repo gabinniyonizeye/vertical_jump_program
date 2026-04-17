@@ -70,6 +70,10 @@
     </header>
 
     <main class="main-content">
+      <div v-if="activeTab === 'dashboard'">
+        <div class="section-title">🏠 Dashboard</div>
+        <Dashboard :trackerRows="trackerRows" :jumpEntries="jumpEntries" @go="activeTab = $event" />
+      </div>
       <div v-if="activeTab === 'schedule'">
         <div class="section-title">📅 Weekly Schedule</div>
         <WeeklySchedule @select="goToWorkout" />
@@ -110,6 +114,7 @@ import WeeklyTracker from './components/WeeklyTracker.vue'
 import PerformanceTracker from './components/PerformanceTracker.vue'
 import AirAlert from './components/AirAlert.vue'
 import AbsProgram from './components/AbsProgram.vue'
+import Dashboard from './components/Dashboard.vue'
 
 const loading = ref(true)
 const user = ref(null)
@@ -145,6 +150,7 @@ async function doLogout() {
 }
 
 const tabs = [
+  { id: 'dashboard',   icon: '🏠', label: 'Dashboard' },
   { id: 'schedule',    icon: '📅', label: 'Schedule' },
   { id: 'workout',     icon: '🏋️', label: 'Workouts' },
   { id: 'tracker',     icon: '📊', label: 'Tracker' },
@@ -152,7 +158,7 @@ const tabs = [
   { id: 'airalert',    icon: '🏃', label: 'Air Alert®' },
   { id: 'abs',         icon: '🔥', label: 'Abs Program' },
 ]
-const activeTab = ref('schedule')
+const activeTab = ref('dashboard')
 
 const dayColors = {
   Monday: '#f97316', Tuesday: '#6366f1', Wednesday: '#3b82f6',
@@ -161,6 +167,10 @@ const dayColors = {
 const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
 const todayName = computed(() => dayNames[new Date().getDay()])
 const todayColor = computed(() => dayColors[todayName.value] || '#f97316')
+
+// Dummy props for Dashboard (WeeklyTracker manages its own state)
+const trackerRows = ref([])
+const jumpEntries = ref([])
 
 function goToWorkout(day) {
   if (['Monday','Wednesday','Saturday'].includes(day.name)) activeTab.value = 'workout'
@@ -241,13 +251,13 @@ function goToWorkout(day) {
 .logout-btn:hover { color: var(--accent); border-color: var(--accent); }
 .tabs { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 1px; }
 .tab {
-  padding: 9px 18px;
+  padding: 7px 12px;
   border-radius: 8px 8px 0 0;
   border: 1px solid transparent;
   border-bottom: none;
   background: transparent;
   color: var(--text);
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 500;
   white-space: nowrap;
   transition: all 0.2s;

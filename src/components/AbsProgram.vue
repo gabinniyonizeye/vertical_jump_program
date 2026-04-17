@@ -59,6 +59,9 @@
                 <span class="expand-icon">{{ expanded[day.name]?.[i] ? '▲' : '▼' }}</span>
               </div>
               <div v-if="expanded[day.name]?.[i]" class="ex-body">
+                <div class="gif-wrap">
+                  <iframe :src="GIF_URLS[ex.name]" class="ex-vid" frameborder="0" allowfullscreen allow="autoplay"></iframe>
+                </div>
                 <div class="form-cue">💡 {{ ex.cue }}</div>
               </div>
             </div>
@@ -78,6 +81,9 @@
                 <span class="expand-icon">{{ expanded[day.name]?.finisher ? '▲' : '▼' }}</span>
               </div>
               <div v-if="expanded[day.name]?.finisher" class="ex-body">
+                <div class="gif-wrap">
+                  <iframe :src="GIF_URLS[day.finisher.name]" class="ex-vid" frameborder="0" allowfullscreen allow="autoplay"></iframe>
+                </div>
                 <div class="form-cue">💡 {{ day.finisher.cue }}</div>
               </div>
             </div>
@@ -97,6 +103,45 @@
         </div>
       </div>
     </template>
+
+    <!-- Daily Check-In -->
+    <div class="card checkin-card">
+      <div class="checkin-top">
+        <div class="checkin-heading">💧 Daily Check-In</div>
+        <div class="ci-streak">🔥 {{ ciStreak }} day streak</div>
+      </div>
+      <div class="ci-dots">
+        <div v-for="(d, i) in ciLast7" :key="i" class="ci-dot" :class="{ filled: d.done, today: d.isToday }" :title="d.label">{{ d.short }}</div>
+      </div>
+      <div class="ci-section">
+        <div class="ci-row-head">
+          <span>💧 Water</span>
+          <span class="ci-goal" :class="ciToday.water >= 10 ? 'ok' : ''">{{ (ciToday.water * 0.25).toFixed(2) }}L / 2.5L{{ ciToday.water >= 10 ? ' ✅' : '' }}</span>
+        </div>
+        <div class="ci-glasses">
+          <button v-for="n in 10" :key="n" class="ci-glass" :class="{ filled: ciToday.water >= n }" @click="ciSetWater(n)">💧</button>
+        </div>
+        <div class="ci-water-labels"><span>0L</span><span>1.25L</span><span>2.5L</span></div>
+      </div>
+      <div class="ci-section">
+        <div class="ci-row-head">
+          <span>🍽️ Meals</span>
+          <span class="ci-goal" :class="ciMealsChecked >= 3 ? 'ok' : ''">{{ ciMealsChecked }}/4 logged{{ ciMealsChecked >= 3 ? ' ✅' : '' }}</span>
+        </div>
+        <div class="ci-meals">
+          <div v-for="meal in ciMeals" :key="meal.id" class="ci-meal-row">
+            <button class="ci-check" :class="{ checked: ciToday.meals[meal.id] }" @click="ciToggleMeal(meal.id)">
+              <span v-if="ciToday.meals[meal.id]">✓</span>
+            </button>
+            <span class="ci-meal-name">{{ meal.icon }} {{ meal.name }}</span>
+            <input class="ci-note" :placeholder="meal.placeholder" :value="ciToday.mealNotes[meal.id] || ''" @input="ciSetNote(meal.id, $event.target.value)" />
+          </div>
+        </div>
+      </div>
+      <button class="ci-save-btn" :class="{ saved: ciSaved }" @click="ciSave">
+        {{ ciSaved ? '✅ Saved!' : '💾 Save Check-In' }}
+      </button>
+    </div>
 
     <div class="card progression-card">
       <div class="prog-title">📈 PROGRESSION GUIDE</div>
@@ -212,6 +257,20 @@ const currentWeek = ref(1)
 const activeDay = ref('Monday')
 const expanded = reactive({})
 const logs = reactive({})
+const GIF_URLS = {
+  'V-Ups':             'https://www.youtube.com/embed/7UiEGi-zEpk?autoplay=1&mute=1',
+  'Leg Raises':        'https://www.youtube.com/embed/JB2oyawG9KI?autoplay=1&mute=1',
+  'Bicycle Crunch':    'https://www.youtube.com/embed/9FGilxCbdz8?autoplay=1&mute=1',
+  'Plank':             'https://www.youtube.com/embed/pSHjTRCQxIw?autoplay=1&mute=1',
+  'Mountain Climbers': 'https://www.youtube.com/embed/kLh-uczlPLg?autoplay=1&mute=1',
+  'Flutter Kicks':     'https://www.youtube.com/embed/ANVdMDaYRts?autoplay=1&mute=1',
+  'Reverse Crunch':    'https://www.youtube.com/embed/hyv13H9NmE0?autoplay=1&mute=1',
+  'Dead Bug':          'https://www.youtube.com/embed/4XLEnwUr1d8?autoplay=1&mute=1',
+  'Toe Touches':       'https://www.youtube.com/embed/Yd4gmFnmwp8?autoplay=1&mute=1',
+  'Crunches':          'https://www.youtube.com/embed/Xyd_fa5zoEU?autoplay=1&mute=1',
+  'Walking':           'https://www.youtube.com/embed/njeZ29umqVE?autoplay=1&mute=1',
+}
+
 
 const weekInfo = computed(() => {
   if (currentWeek.value <= 2) return 'Follow as written'
@@ -236,6 +295,61 @@ function save() {
 }
 
 watch([currentWeek, logs], save, { deep: true })
+
+// ── Daily Check-In ──────────────────────────────────────────────
+const ciMeals = [
+  { id: 'breakfast', name: 'Breakfast', icon: '🌅', placeholder: 'e.g. oats, eggs...' },
+  { id: 'lunch',     name: 'Lunch',     icon: '☀️',  placeholder: 'e.g. rice, chicken...' },
+  { id: 'dinner',    name: 'Dinner',    icon: '🌙',  placeholder: 'e.g. pasta, salad...' },
+  { id: 'snack',     name: 'Snack',     icon: '🍎',  placeholder: 'e.g. fruit, nuts...' },
+]
+
+const ciKey = computed(() => `vjp_checkin_${props.uid || 'guest'}`)
+function ciTodayStr() { return new Date().toISOString().slice(0, 10) }
+function ciLoadHistory() { return JSON.parse(localStorage.getItem(ciKey.value) || '[]') }
+
+const ciHistory = ref(ciLoadHistory())
+const ciToday = ref(ciHistory.value.find(e => e.date === ciTodayStr()) || { date: ciTodayStr(), water: 0, meals: {}, mealNotes: {}, done: false })
+const ciSaved = ref(false)
+
+const ciMealsChecked = computed(() => ciMeals.filter(m => ciToday.value.meals[m.id]).length)
+
+function ciSetWater(n) { ciToday.value.water = ciToday.value.water === n ? n - 1 : n; ciSaved.value = false }
+// each step = 0.25L, goal = 2.5L (10 steps)
+function ciToggleMeal(id) { ciToday.value.meals[id] = !ciToday.value.meals[id]; ciSaved.value = false }
+function ciSetNote(id, val) { ciToday.value.mealNotes[id] = val; ciSaved.value = false }
+
+function ciSave() {
+  ciToday.value.done = ciToday.value.water >= 10 && ciMealsChecked.value >= 3
+  const hist = ciLoadHistory().filter(e => e.date !== ciTodayStr())
+  hist.push({ ...ciToday.value })
+  localStorage.setItem(ciKey.value, JSON.stringify(hist))
+  ciHistory.value = hist
+  ciSaved.value = true
+  setTimeout(() => ciSaved.value = false, 2000)
+}
+
+const ciStreak = computed(() => {
+  const hist = [...ciHistory.value].sort((a, b) => a.date.localeCompare(b.date))
+  let s = 0, check = ciTodayStr()
+  for (let i = hist.length - 1; i >= 0; i--) {
+    if (hist[i].date === check && hist[i].done) {
+      s++
+      const d = new Date(check); d.setDate(d.getDate() - 1); check = d.toISOString().slice(0, 10)
+    } else if (hist[i].date === check) break
+  }
+  return s
+})
+
+const ciLast7 = computed(() => {
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(); d.setDate(d.getDate() - (6 - i))
+    const dateStr = d.toISOString().slice(0, 10)
+    const entry = ciHistory.value.find(e => e.date === dateStr)
+    return { label: dateStr, short: 'SMTWTFS'[d.getDay()], done: entry?.done || false, isToday: i === 6 }
+  })
+})
+// ────────────────────────────────────────────────────────────────
 
 function toggleDay(day) { logs[day].done = !logs[day].done; save() }
 
@@ -302,7 +416,9 @@ function toggleExpand(day, i) {
 .ex-sets { font-size: 13px; color: var(--text); }
 .expand-icon { font-size: 11px; color: var(--text); }
 
-.ex-body { border-top: 1px solid var(--border); padding: 12px 16px; background: var(--surface2); }
+.ex-body { border-top: 1px solid var(--border); padding: 12px 16px; background: var(--surface2); display: flex; flex-direction: column; gap: 8px; }
+.gif-wrap { border-radius: 10px; overflow: hidden; }
+.ex-vid { width: 100%; aspect-ratio: 16/9; border-radius: 10px; display: block; border: none; }
 .form-cue { font-size: 13px; color: var(--text); background: #6366f115; border-radius: 8px; padding: 8px 12px; border-left: 3px solid #6366f1; }
 
 .finisher-section, .cardio-section { margin-bottom: 16px; }
@@ -321,4 +437,48 @@ function toggleExpand(day, i) {
 .diet-label { font-size: 12px; font-weight: 700; color: var(--green); margin-bottom: 6px; }
 .diet-label.remove { color: var(--accent); }
 .diet-section ul { padding-left: 18px; font-size: 13px; color: var(--text); display: flex; flex-direction: column; gap: 4px; }
+
+/* Check-In */
+.checkin-card { margin-bottom: 16px; display: flex; flex-direction: column; gap: 16px; }
+.checkin-top { display: flex; justify-content: space-between; align-items: center; }
+.checkin-heading { font-size: 15px; font-weight: 700; color: var(--text-h); }
+.ci-streak { font-size: 14px; font-weight: 700; color: var(--accent); }
+.ci-dots { display: flex; gap: 8px; }
+.ci-dot {
+  width: 32px; height: 32px; border-radius: 50%;
+  border: 2px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: var(--text); transition: all 0.2s;
+}
+.ci-dot.filled { background: #f97316; border-color: #f97316; color: #fff; }
+.ci-dot.today:not(.filled) { border-color: #f97316; color: var(--text-h); }
+.ci-section { display: flex; flex-direction: column; gap: 10px; }
+.ci-row-head { display: flex; justify-content: space-between; font-size: 14px; font-weight: 600; color: var(--text-h); }
+.ci-goal { font-size: 13px; color: var(--text); }
+.ci-goal.ok { color: #22c55e; }
+.ci-glasses { display: flex; flex-wrap: wrap; gap: 6px; }
+.ci-glass {
+  width: 34px; height: 34px; border-radius: 8px;
+  background: var(--surface2); border: 1px solid var(--border);
+  font-size: 15px; opacity: 0.3; transition: all 0.15s;
+}
+.ci-glass.filled { opacity: 1; background: #3b82f622; border-color: #3b82f6; }
+.ci-water-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--text); padding: 0 2px; }
+.ci-meals { display: flex; flex-direction: column; gap: 8px; }
+.ci-meal-row { display: flex; align-items: center; gap: 8px; }
+.ci-check {
+  width: 24px; height: 24px; flex-shrink: 0; border-radius: 6px;
+  border: 2px solid var(--border); background: var(--surface2);
+  font-size: 13px; font-weight: 700; color: #22c55e;
+  display: flex; align-items: center; justify-content: center; transition: all 0.15s;
+}
+.ci-check.checked { background: #22c55e22; border-color: #22c55e; }
+.ci-meal-name { font-size: 13px; color: var(--text-h); white-space: nowrap; min-width: 85px; }
+.ci-note { font-size: 13px; }
+.ci-save-btn {
+  background: var(--accent); color: #fff; font-weight: 700;
+  font-size: 14px; padding: 11px; border-radius: 10px; transition: all 0.2s;
+}
+.ci-save-btn:hover { opacity: 0.85; }
+.ci-save-btn.saved { background: #22c55e; }
 </style>
