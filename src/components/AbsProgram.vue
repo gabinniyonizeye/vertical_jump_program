@@ -11,11 +11,23 @@
     </div>
 
     <div class="week-selector card">
-      <div class="week-label">📅 Current Week:</div>
-      <select v-model="currentWeek" class="week-dropdown">
-        <option v-for="w in 8" :key="w" :value="w">Week {{ w }}</option>
-      </select>
-      <div class="week-info">{{ weekInfo }}</div>
+      <div class="week-top">
+        <div class="week-label">
+          <span>📅 Week starting:</span>
+          <input type="date" v-model="startDate" class="date-picker" @change="onDatePick" />
+          <span v-if="weekLabel" class="week-range-badge">{{ weekLabel }}</span>
+        </div>
+        <button class="new-week-btn" @click="newWeek">+ New Week</button>
+      </div>
+      <div v-if="weekLabel" class="week-info">{{ weekInfo }} &nbsp;·&nbsp; Week {{ absHistory.length + 1 }} of 8</div>
+      <div v-if="absHistory.length" class="abs-history">
+        <div class="history-title">📚 Past Weeks</div>
+        <div v-for="(w, i) in [...absHistory].reverse()" :key="i" class="history-item">
+          <span class="history-week">Week {{ w.week }}</span>
+          <span class="history-range">{{ w.label }}</span>
+          <span class="history-hint">{{ weekHint(w.week) }}</span>
+        </div>
+      </div>
     </div>
 
     <div class="day-tabs">
@@ -62,6 +74,7 @@
                 <div class="gif-wrap">
                   <iframe :src="GIF_URLS[ex.name]" class="ex-vid" frameborder="0" allowfullscreen allow="autoplay"></iframe>
                 </div>
+                <TimerWidget v-if="ex.seconds" :seconds="ex.seconds" />
                 <div class="form-cue">💡 {{ ex.cue }}</div>
               </div>
             </div>
@@ -84,6 +97,7 @@
                 <div class="gif-wrap">
                   <iframe :src="GIF_URLS[day.finisher.name]" class="ex-vid" frameborder="0" allowfullscreen allow="autoplay"></iframe>
                 </div>
+                <TimerWidget v-if="day.finisher.seconds" :seconds="day.finisher.seconds" />
                 <div class="form-cue">💡 {{ day.finisher.cue }}</div>
               </div>
             </div>
@@ -180,6 +194,7 @@
 <script setup>
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { loadUserData, saveUserData } from '../useAuth.js'
+import TimerWidget from './TimerWidget.vue'
 
 const props = defineProps({ uid: String })
 
@@ -191,7 +206,7 @@ const days = [
       { name: 'V-Ups', sets: '15 reps', cue: 'Touch toes at top. Keep legs straight. Slow down.' },
       { name: 'Leg Raises', sets: '15 reps', cue: 'Slow 3 sec down. No swinging. Lower back flat on floor.' },
       { name: 'Bicycle Crunch', sets: '25 reps', cue: 'Elbow to opposite knee. Twist from core, not neck.' },
-      { name: 'Plank', sets: '60 sec', cue: 'Straight line head to heel. Squeeze glutes. No sagging hips.' },
+      { name: 'Plank', sets: '60 sec', seconds: 60, cue: 'Straight line head to heel. Squeeze glutes. No sagging hips.' },
     ],
     finisher: { name: 'Mountain Climbers', sets: '40 reps x3', cue: 'Fast knees to chest. Keep core tight throughout.' }
   },
@@ -202,7 +217,7 @@ const days = [
       { name: 'Leg Raises', sets: '20 reps', cue: 'Slow 3 sec down. Lower back pressed to floor the whole time.' },
       { name: 'Flutter Kicks', sets: '40 reps', cue: 'Small fast kicks. Lower back flat. Keep breathing steadily.' },
       { name: 'Reverse Crunch', sets: '15 reps', cue: 'Lift hips off floor. Squeeze lower abs at top. Slow down.' },
-      { name: 'Plank', sets: '60 sec', cue: 'Straight body. Breathe steady. Do not drop hips.' },
+      { name: 'Plank', sets: '60 sec', seconds: 60, cue: 'Straight body. Breathe steady. Do not drop hips.' },
     ],
     cardio: 'Run / Skip — 20 min'
   },
@@ -212,7 +227,7 @@ const days = [
     exercises: [
       { name: 'Dead Bug', sets: '15 reps', cue: 'Opposite arm and leg extend. Lower back stays flat. Move slow.' },
       { name: 'Toe Touches', sets: '20 reps', cue: 'Reach up to toes. Crunch from abs, not momentum.' },
-      { name: 'Plank', sets: '60 sec', cue: 'Elbows under shoulders. Squeeze core and glutes.' },
+      { name: 'Plank', sets: '60 sec', seconds: 60, cue: 'Elbows under shoulders. Squeeze core and glutes.' },
       { name: 'Bicycle Crunch', sets: '25 reps', cue: 'Slow rotation. Feel the twist in your obliques.' },
     ],
     finisher: { name: 'Flutter Kicks', sets: '40 reps', cue: 'Fast small kicks. Lower back flat on floor.' }
@@ -221,8 +236,8 @@ const days = [
     name: 'Thursday', subtitle: 'Active Recovery', color: '#eab308',
     focus: 'Light work — still trains abs but lets muscles recover',
     exercises: [
-      { name: 'Walking', sets: '30 min', cue: 'Easy pace. Let your body recover and rebuild.' },
-      { name: 'Plank', sets: '3 x 45 sec', cue: 'Hold form. Rest 30 sec between sets.' },
+      { name: 'Walking', sets: '30 min', seconds: 1800, cue: 'Easy pace. Let your body recover and rebuild.' },
+      { name: 'Plank', sets: '3 x 45 sec', seconds: 45, cue: 'Hold form. Rest 30 sec between sets.' },
       { name: 'Crunches', sets: '20 reps', cue: 'Slow and controlled. Feel the squeeze at top.' },
     ]
   },
@@ -233,7 +248,7 @@ const days = [
       { name: 'V-Ups', sets: '15 reps', cue: 'Explosive up. Slow down. Touch toes every rep.' },
       { name: 'Leg Raises', sets: '15 reps', cue: '3 sec down. Lower back flat. No swinging at all.' },
       { name: 'Mountain Climbers', sets: '40 reps', cue: 'Fast pace. Drive knees to chest. Core stays tight.' },
-      { name: 'Plank', sets: '60 sec', cue: 'Straight body. Breathe. Do not sag or raise hips.' },
+      { name: 'Plank', sets: '60 sec', seconds: 60, cue: 'Straight body. Breathe. Do not sag or raise hips.' },
     ]
   },
   {
@@ -253,36 +268,65 @@ const days = [
   },
 ]
 
-const currentWeek = ref(1)
+const weekLabel = ref('')
+const startDate = ref('')
+const absHistory = reactive([])
 const activeDay = ref('Monday')
 const expanded = reactive({})
 const logs = reactive({})
+
+const currentWeek = computed(() => absHistory.length + 1)
+
+function onDatePick() {
+  if (!startDate.value) return
+  const d = new Date(startDate.value)
+  const day = d.getDay()
+  const diff = day === 0 ? -6 : 1 - day
+  d.setDate(d.getDate() + diff)
+  const end = new Date(d); end.setDate(end.getDate() + 6)
+  const fmt = dt => dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  weekLabel.value = `${fmt(d)} – ${fmt(end)}`
+  startDate.value = d.toISOString().split('T')[0]
+}
+
+function weekHint(w) {
+  if (w <= 2) return 'Follow as written'
+  if (w <= 4) return '+5 reps each · +10 sec plank'
+  if (w <= 6) return 'Add 1 extra round'
+  return 'Rest 15–20 sec · Slower reps'
+}
+
+function newWeek() {
+  if (!confirm('Start a new week? Current week will be archived.')) return
+  if (weekLabel.value) absHistory.push({ label: weekLabel.value, week: currentWeek.value })
+  weekLabel.value = ''
+  startDate.value = ''
+  Object.keys(logs).forEach(d => { logs[d] = { done: false, exercises: {}, finisher: false, cardio: false } })
+  save()
+}
 const GIF_URLS = {
-  'V-Ups':             'https://www.youtube.com/embed/7UiEGi-zEpk?autoplay=1&mute=1',
-  'Leg Raises':        'https://www.youtube.com/embed/JB2oyawG9KI?autoplay=1&mute=1',
-  'Bicycle Crunch':    'https://www.youtube.com/embed/9FGilxCbdz8?autoplay=1&mute=1',
-  'Plank':             'https://www.youtube.com/embed/pSHjTRCQxIw?autoplay=1&mute=1',
-  'Mountain Climbers': 'https://www.youtube.com/embed/kLh-uczlPLg?autoplay=1&mute=1',
-  'Flutter Kicks':     'https://www.youtube.com/embed/ANVdMDaYRts?autoplay=1&mute=1',
-  'Reverse Crunch':    'https://www.youtube.com/embed/hyv13H9NmE0?autoplay=1&mute=1',
-  'Dead Bug':          'https://www.youtube.com/embed/4XLEnwUr1d8?autoplay=1&mute=1',
-  'Toe Touches':       'https://www.youtube.com/embed/Yd4gmFnmwp8?autoplay=1&mute=1',
-  'Crunches':          'https://www.youtube.com/embed/Xyd_fa5zoEU?autoplay=1&mute=1',
-  'Walking':           'https://www.youtube.com/embed/njeZ29umqVE?autoplay=1&mute=1',
+  'V-Ups':             'https://www.youtube.com/embed/5kvKmRGADlQ?autoplay=1&mute=1',
+  'Leg Raises':        'https://www.youtube.com/embed/dGKbTKLnym4?autoplay=1&mute=1',
+  'Bicycle Crunch':    'https://www.youtube.com/embed/-nJkAJpQemI?autoplay=1&mute=1',
+  'Plank':             'https://www.youtube.com/embed/Fcbw82ykBvY?autoplay=1&mute=1',
+  'Mountain Climbers': 'https://www.youtube.com/embed/wQq3ybaLZeA?autoplay=1&mute=1',
+  'Flutter Kicks':     'https://www.youtube.com/embed/K5wuM_gNWyw?autoplay=1&mute=1',
+  'Reverse Crunch':    'https://www.youtube.com/embed/UwRfRN5fYRg?autoplay=1&mute=1',
+  'Dead Bug':          'https://www.youtube.com/embed/bXMQkRowNk8?autoplay=1&mute=1',
+  'Toe Touches':       'https://www.youtube.com/embed/9iEI95-eZWk?autoplay=1&mute=1',
+  'Crunches':          'https://www.youtube.com/embed/KojXAk4lXkE?autoplay=1&mute=1',
+  'Walking':           'https://www.youtube.com/embed/njeZ29umqVE?autoplay=1&mute=1', // Walk at Home
 }
 
 
-const weekInfo = computed(() => {
-  if (currentWeek.value <= 2) return 'Follow as written'
-  if (currentWeek.value <= 4) return '+5 reps each · +10 sec plank'
-  if (currentWeek.value <= 6) return 'Add 1 extra round'
-  return 'Rest 15–20 sec · Slower reps'
-})
+const weekInfo = computed(() => weekHint(currentWeek.value))
 
 onMounted(async () => {
   const data = await loadUserData(props.uid, 'abs')
   if (data) {
-    currentWeek.value = data.currentWeek || 1
+    weekLabel.value = data.weekLabel || ''
+    startDate.value = data.startDate || ''
+    if (data.absHistory) absHistory.splice(0, absHistory.length, ...data.absHistory)
     if (data.logs) Object.assign(logs, data.logs)
   }
   days.forEach(d => {
@@ -291,10 +335,10 @@ onMounted(async () => {
 })
 
 function save() {
-  saveUserData(props.uid, 'abs', { currentWeek: currentWeek.value, logs })
+  saveUserData(props.uid, 'abs', { weekLabel: weekLabel.value, startDate: startDate.value, absHistory: JSON.parse(JSON.stringify(absHistory)), logs })
 }
 
-watch([currentWeek, logs], save, { deep: true })
+watch(logs, save, { deep: true })
 
 // ── Daily Check-In ──────────────────────────────────────────────
 const ciMeals = [
@@ -370,10 +414,21 @@ function toggleExpand(day, i) {
 .rules-title { font-size: 16px; font-weight: 700; color: var(--text-h); margin-bottom: 10px; }
 .rules-list { list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: var(--text); }
 
-.week-selector { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
-.week-label { font-weight: 600; color: var(--text-h); }
-.week-dropdown { padding: 7px 12px; border-radius: 8px; font-size: 14px; font-weight: 600; }
-.week-info { font-size: 13px; color: var(--accent); font-weight: 600; }
+.week-selector { margin-bottom: 16px; }
+.week-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 10px; }
+.week-label { display: flex; align-items: center; gap: 10px; font-weight: 600; color: var(--text-h); flex-wrap: wrap; }
+.date-picker { background: var(--surface2); border: 1px solid var(--border); color: var(--text-h); border-radius: 8px; padding: 7px 10px; font-size: 14px; cursor: pointer; }
+.date-picker:focus { border-color: var(--accent); outline: none; }
+.week-range-badge { background: var(--accent); color: #fff; border-radius: 20px; padding: 4px 12px; font-size: 13px; font-weight: 600; white-space: nowrap; }
+.new-week-btn { background: var(--accent); color: #fff; border-radius: 8px; padding: 8px 16px; font-size: 14px; font-weight: 600; border: none; cursor: pointer; transition: opacity 0.2s; }
+.new-week-btn:hover { opacity: 0.85; }
+.week-info { font-size: 13px; color: var(--accent); font-weight: 600; margin-bottom: 10px; }
+.abs-history { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+.history-title { font-size: 13px; font-weight: 700; color: var(--text-h); margin-bottom: 4px; }
+.history-item { display: flex; align-items: center; gap: 10px; background: var(--surface2); border-radius: 8px; padding: 8px 12px; }
+.history-week { font-weight: 700; color: var(--text-h); font-size: 13px; min-width: 55px; }
+.history-range { font-size: 12px; color: var(--text); flex: 1; }
+.history-hint { font-size: 12px; color: var(--accent); font-weight: 600; }
 
 .day-tabs { display: flex; gap: 6px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 2px; }
 .day-tab {
