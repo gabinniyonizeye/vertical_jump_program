@@ -90,6 +90,10 @@
         <div class="section-title">🏃 Air Alert® Program</div>
         <AirAlert :uid="user.uid" />
       </div>
+      <div v-if="activeTab === 'abs'">
+        <div class="section-title">🔥 Elite Abs Program</div>
+        <AbsProgram :uid="user.uid" />
+      </div>
     </main>
   </div>
 </template>
@@ -105,6 +109,7 @@ import WorkoutDetail from './components/WorkoutDetail.vue'
 import WeeklyTracker from './components/WeeklyTracker.vue'
 import PerformanceTracker from './components/PerformanceTracker.vue'
 import AirAlert from './components/AirAlert.vue'
+import AbsProgram from './components/AbsProgram.vue'
 
 const loading = ref(true)
 const user = ref(null)
@@ -145,6 +150,7 @@ const tabs = [
   { id: 'tracker',     icon: '📊', label: 'Tracker' },
   { id: 'performance', icon: '📈', label: 'Performance' },
   { id: 'airalert',    icon: '🏃', label: 'Air Alert®' },
+  { id: 'abs',         icon: '🔥', label: 'Abs Program' },
 ]
 const activeTab = ref('schedule')
 
