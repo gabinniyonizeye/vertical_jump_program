@@ -92,13 +92,11 @@ const absLogs = ref({})
 const ciHistory = ref([])
 
 onMounted(async () => {
-  // load abs logs from firestore
   const absData = await loadUserData(props.uid, 'abs')
   if (absData?.logs) absLogs.value = absData.logs
 
-  // load daily check-in from localStorage
-  const ciKey = `vjp_checkin_${props.uid || 'guest'}`
-  ciHistory.value = JSON.parse(localStorage.getItem(ciKey) || '[]')
+  const ciData = await loadUserData(props.uid, 'checkin')
+  if (ciData?.ciHistory) ciHistory.value = ciData.ciHistory
 })
 
 const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']

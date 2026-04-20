@@ -349,6 +349,12 @@ onMounted(async () => {
     if (data.absHistory) absHistory.splice(0, absHistory.length, ...data.absHistory)
     if (data.logs) Object.assign(logs, data.logs)
   }
+  const ciData = await loadUserData(props.uid, 'checkin')
+  if (ciData?.ciHistory) {
+    ciHistory.value = ciData.ciHistory
+    const todayEntry = ciData.ciHistory.find(e => e.date === ciTodayStr())
+    if (todayEntry) ciToday.value = todayEntry
+  }
 })
 
 function save() {
@@ -365,12 +371,10 @@ const ciMeals = [
   { id: 'snack',     name: 'Snack',     icon: '🍎',  placeholder: 'e.g. fruit, nuts...' },
 ]
 
-const ciKey = computed(() => `vjp_checkin_${props.uid || 'guest'}`)
 function ciTodayStr() { return new Date().toISOString().slice(0, 10) }
-function ciLoadHistory() { return JSON.parse(localStorage.getItem(ciKey.value) || '[]') }
 
-const ciHistory = ref(ciLoadHistory())
-const ciToday = ref(ciHistory.value.find(e => e.date === ciTodayStr()) || { date: ciTodayStr(), water: 0, meals: {}, mealNotes: {}, done: false })
+const ciHistory = ref([])
+const ciToday = ref({ date: ciTodayStr(), water: 0, meals: {}, mealNotes: {}, done: false })
 const ciSaved = ref(false)
 
 const ciMealsChecked = computed(() => ciMeals.filter(m => ciToday.value.meals[m.id]).length)
@@ -382,10 +386,10 @@ function ciSetNote(id, val) { ciToday.value.mealNotes[id] = val; ciSaved.value =
 
 function ciSave() {
   ciToday.value.done = ciToday.value.water >= 10 && ciMealsChecked.value >= 3
-  const hist = ciLoadHistory().filter(e => e.date !== ciTodayStr())
+  const hist = ciHistory.value.filter(e => e.date !== ciTodayStr())
   hist.push({ ...ciToday.value })
-  localStorage.setItem(ciKey.value, JSON.stringify(hist))
   ciHistory.value = hist
+  saveUserData(props.uid, 'checkin', { ciHistory: hist })
   ciSaved.value = true
   setTimeout(() => ciSaved.value = false, 2000)
 }
