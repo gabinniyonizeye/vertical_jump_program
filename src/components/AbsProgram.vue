@@ -335,6 +335,8 @@ onMounted(async () => {
   if (data) {
     weekLabel.value = data.weekLabel || ''
     startDate.value = data.startDate || ''
+    // recover weekLabel if it was wiped by a previous bug
+    if (!weekLabel.value && startDate.value) onDatePick()
     if (data.absHistory) absHistory.splice(0, absHistory.length, ...data.absHistory)
     if (data.logs) {
       Object.keys(data.logs).forEach(k => { logs[k] = data.logs[k] })
@@ -361,7 +363,7 @@ async function persist() {
   saving = false
 }
 
-watch([weekLabel, logs], persist, { deep: true })
+watch([weekLabel, startDate, logs, absHistory], persist, { deep: true })
 
 // ── Daily Check-In ──────────────────────────────────────────────
 const ciMeals = [
