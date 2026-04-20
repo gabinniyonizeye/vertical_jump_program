@@ -164,14 +164,13 @@ const latestVert = computed(() => {
 const latestAbs = computed(() => {
   const logs = absLogs.value
   if (!logs || !Object.keys(logs).length) return null
-  const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
   let s = 0
   const today = new Date()
   for (let i = 0; i <= 365; i++) {
     const d = new Date(today)
     d.setDate(d.getDate() - i)
-    const name = dayNames[d.getDay()]
-    if (logs[name]?.done) s++
+    const dateStr = d.toISOString().slice(0, 10)
+    if (logs[dateStr]?.done) s++
     else if (i > 0) break
   }
   return s || null

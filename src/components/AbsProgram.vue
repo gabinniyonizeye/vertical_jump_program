@@ -47,8 +47,8 @@
             <div class="day-title" :style="{ color: day.color }">{{ day.name }} — {{ day.subtitle }}</div>
             <div class="day-focus">{{ day.focus }}</div>
           </div>
-          <button class="done-day-btn" :class="{ checked: logs[day.name]?.done }" @click="toggleDay(day.name)">
-            {{ logs[day.name]?.done ? '✓ Done' : 'Mark Done' }}
+          <button class="done-day-btn" :class="{ checked: getLog(day.name).done }" @click="toggleDay(day.name)">
+            {{ getLog(day.name).done ? '✓ Done' : 'Mark Done' }}
           </button>
         </div>
 
@@ -61,8 +61,8 @@
           <div v-if="day.exercises" class="exercises">
             <div v-for="(ex, i) in day.exercises" :key="i" class="exercise-card card">
               <div class="ex-header" @click="toggleExpand(day.name, i)">
-                <div class="ex-check" :class="{ done: logs[day.name]?.exercises?.[i] }" @click.stop="toggleExercise(day.name, i)">
-                  <span v-if="logs[day.name]?.exercises?.[i]">✓</span>
+                <div class="ex-check" :class="{ done: getLog(day.name).exercises?.[i] }" @click.stop="toggleExercise(day.name, i)">
+                  <span v-if="getLog(day.name).exercises?.[i]">✓</span>
                 </div>
                 <div class="ex-info">
                   <div class="ex-name">{{ ex.name }}</div>
@@ -84,8 +84,8 @@
             <div class="finisher-label">🔥 FINISHER</div>
             <div class="finisher-card card">
               <div class="ex-header" @click="toggleExpand(day.name, 'finisher')">
-                <div class="ex-check" :class="{ done: logs[day.name]?.finisher }" @click.stop="logs[day.name].finisher = !logs[day.name].finisher; save()">
-                  <span v-if="logs[day.name]?.finisher">✓</span>
+                <div class="ex-check" :class="{ done: getLog(day.name).finisher }" @click.stop="getLog(day.name).finisher = !getLog(day.name).finisher; save()">
+                  <span v-if="getLog(day.name).finisher">✓</span>
                 </div>
                 <div class="ex-info">
                   <div class="ex-name">{{ day.finisher.name }}</div>
@@ -107,8 +107,8 @@
             <div class="cardio-label">🏃 CARDIO</div>
             <div class="cardio-card card">
               <div class="ex-header">
-                <div class="ex-check" :class="{ done: logs[day.name]?.cardio }" @click="logs[day.name].cardio = !logs[day.name].cardio; save()">
-                  <span v-if="logs[day.name]?.cardio">✓</span>
+                <div class="ex-check" :class="{ done: getLog(day.name).cardio }" @click="getLog(day.name).cardio = !getLog(day.name).cardio; save()">
+                  <span v-if="getLog(day.name).cardio">✓</span>
                 </div>
                 <div class="ex-info"><div class="ex-name">{{ day.cardio }}</div></div>
               </div>
@@ -277,6 +277,24 @@ const activeDay = ref(days.find(d => d.name === todayDay) ? todayDay : 'Monday')
 const expanded = reactive({})
 const logs = reactive({})
 
+function todayStr() { return new Date().toISOString().slice(0, 10) }
+function getLog(dayName) {
+  // find the most recent date entry for this day name in current week
+  const key = currentWeekDateFor(dayName)
+  if (!logs[key]) logs[key] = { done: false, exercises: {}, finisher: false, cardio: false }
+  return logs[key]
+}
+function currentWeekDateFor(dayName) {
+  const order = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']
+  const dayIndex = order.indexOf(dayName)
+  const now = new Date()
+  const currentDay = now.getDay() === 0 ? 6 : now.getDay() - 1 // 0=Mon
+  const diff = dayIndex - currentDay
+  const d = new Date(now)
+  d.setDate(d.getDate() + diff)
+  return d.toISOString().slice(0, 10)
+}
+
 const currentWeek = computed(() => absHistory.length + 1)
 
 function onDatePick() {
@@ -331,9 +349,6 @@ onMounted(async () => {
     if (data.absHistory) absHistory.splice(0, absHistory.length, ...data.absHistory)
     if (data.logs) Object.assign(logs, data.logs)
   }
-  days.forEach(d => {
-    if (!logs[d.name]) logs[d.name] = { done: false, exercises: {}, finisher: false, cardio: false }
-  })
 })
 
 function save() {
@@ -397,11 +412,12 @@ const ciLast7 = computed(() => {
 })
 // ────────────────────────────────────────────────────────────────
 
-function toggleDay(day) { logs[day].done = !logs[day].done; save() }
+function toggleDay(day) { getLog(day).done = !getLog(day).done; save() }
 
 function toggleExercise(day, i) {
-  if (!logs[day].exercises) logs[day].exercises = {}
-  logs[day].exercises[i] = !logs[day].exercises[i]
+  const log = getLog(day)
+  if (!log.exercises) log.exercises = {}
+  log.exercises[i] = !log.exercises[i]
   save()
 }
 
