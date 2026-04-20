@@ -47,8 +47,8 @@
       </div>
       <div class="stat-card card" style="cursor:pointer" @click="$emit('go','performance')">
         <div class="stat-icon">🔥</div>
-        <div class="stat-val">{{ latestAbs || '—' }}<span v-if="latestAbs" class="stat-unit">wk</span></div>
-        <div class="stat-label">Abs Week</div>
+        <div class="stat-val">{{ latestAbs || '—' }}<span v-if="latestAbs" class="stat-unit">d</span></div>
+        <div class="stat-label">Abs Streak</div>
       </div>
     </div>
 
@@ -84,7 +84,7 @@
 <script setup>
 import { computed } from 'vue'
 
-const props = defineProps({ trackerRows: Array, jumpEntries: Array, absWeek: Number })
+const props = defineProps({ trackerRows: Array, jumpEntries: Array, absLogs: Object, uid: String })
 defineEmits(['go'])
 
 const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
@@ -128,7 +128,7 @@ const totalSessions = computed(() => {
 })
 
 const streak = computed(() => {
-  const ciKey = `vjp_checkin_${window.__vjp_uid || 'guest'}`
+  const ciKey = `vjp_checkin_${props.uid || 'guest'}`
   const hist = JSON.parse(localStorage.getItem(ciKey) || '[]')
   let s = 0
   const today = new Date()
@@ -149,7 +149,20 @@ const latestVert = computed(() => {
   return filled.length ? filled[filled.length - 1] : null
 })
 
-const latestAbs = computed(() => props.absWeek || null)
+const latestAbs = computed(() => {
+  if (!props.absLogs) return null
+  const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
+  let s = 0
+  const today = new Date()
+  for (let i = 0; i <= 365; i++) {
+    const d = new Date(today)
+    d.setDate(d.getDate() - i)
+    const name = dayNames[d.getDay()]
+    if (props.absLogs[name]?.done) s++
+    else if (i > 0) break
+  }
+  return s || null
+})
 
 const tips = [
   'Warm up your ankles before every session — stiff ankles kill your jump.',

@@ -72,7 +72,7 @@
     <main class="main-content">
       <div v-if="activeTab === 'dashboard'">
         <div class="section-title">🏠 Dashboard</div>
-        <Dashboard :trackerRows="trackerRows" :jumpEntries="jumpEntries" :absWeek="absWeek" @go="activeTab = $event" />
+        <Dashboard :trackerRows="trackerRows" :jumpEntries="jumpEntries" :absLogs="absLogs" :uid="user.uid" @go="activeTab = $event" />
       </div>
       <div v-if="activeTab === 'schedule'">
         <div class="section-title">📅 Weekly Schedule</div>
@@ -171,15 +171,14 @@ const todayColor = computed(() => dayColors[todayName.value] || '#f97316')
 // Dummy props for Dashboard (WeeklyTracker manages its own state)
 const trackerRows = ref([])
 const jumpEntries = ref([])
-const absWeek = ref(1)
+const absLogs = ref({})
 
 onMounted(() => {
-  // load abs week for dashboard
   const uid = user.value?.uid
   if (uid) {
     import('./useAuth.js').then(({ loadUserData }) => {
       loadUserData(uid, 'abs').then(data => {
-        if (data?.absHistory) absWeek.value = data.absHistory.length + 1
+        if (data?.logs) absLogs.value = data.logs
       })
     })
   }
