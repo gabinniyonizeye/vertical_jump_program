@@ -292,21 +292,9 @@ const expanded = reactive({})
 const logs = reactive({})
 let saving = false
 
-function todayStr() { return new Date().toISOString().slice(0, 10) }
 function getLog(dayName) {
-  const key = currentWeekDateFor(dayName)
-  if (!logs[key]) logs[key] = { done: false, exercises: {}, finisher: false, cardio: false }
-  return logs[key]
-}
-function currentWeekDateFor(dayName) {
-  const order = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']
-  const dayIndex = order.indexOf(dayName)
-  const now = new Date()
-  const currentDay = now.getDay() === 0 ? 6 : now.getDay() - 1
-  const diff = dayIndex - currentDay
-  const d = new Date(now)
-  d.setDate(d.getDate() + diff)
-  return d.toISOString().slice(0, 10)
+  if (!logs[dayName]) logs[dayName] = { done: false, exercises: {}, finisher: false, cardio: false }
+  return logs[dayName]
 }
 
 const currentWeek = computed(() => absHistory.length + 1)
