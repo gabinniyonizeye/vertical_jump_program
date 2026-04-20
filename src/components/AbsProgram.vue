@@ -84,7 +84,7 @@
             <div class="finisher-label">🔥 FINISHER</div>
             <div class="finisher-card card">
               <div class="ex-header" @click="toggleExpand(day.name, 'finisher')">
-                <div class="ex-check" :class="{ done: getLog(day.name).finisher }" @click.stop="getLog(day.name).finisher = !getLog(day.name).finisher; save()">
+                <div class="ex-check" :class="{ done: getLog(day.name).finisher }" @click.stop="getLog(day.name).finisher = !getLog(day.name).finisher; persist()">
                   <span v-if="getLog(day.name).finisher">✓</span>
                 </div>
                 <div class="ex-info">
@@ -107,7 +107,7 @@
             <div class="cardio-label">🏃 CARDIO</div>
             <div class="cardio-card card">
               <div class="ex-header">
-                <div class="ex-check" :class="{ done: getLog(day.name).cardio }" @click="getLog(day.name).cardio = !getLog(day.name).cardio; save()">
+                <div class="ex-check" :class="{ done: getLog(day.name).cardio }" @click="getLog(day.name).cardio = !getLog(day.name).cardio; persist()">
                   <span v-if="getLog(day.name).cardio">✓</span>
                 </div>
                 <div class="ex-info"><div class="ex-name">{{ day.cardio }}</div></div>
@@ -270,32 +270,32 @@ const days = [
 
 const weekLabel = ref('')
 const startDate = ref('')
-const absHistory = reactive([])
+const absHistory = ref([])
 const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
 const todayDay = dayNames[new Date().getDay()]
 const activeDay = ref(days.find(d => d.name === todayDay) ? todayDay : 'Monday')
 const expanded = reactive({})
-const logs = reactive({})
+const logs = ref({})
+let saving = false
 
 function todayStr() { return new Date().toISOString().slice(0, 10) }
 function getLog(dayName) {
-  // find the most recent date entry for this day name in current week
   const key = currentWeekDateFor(dayName)
-  if (!logs[key]) logs[key] = { done: false, exercises: {}, finisher: false, cardio: false }
-  return logs[key]
+  if (!logs.value[key]) logs.value[key] = { done: false, exercises: {}, finisher: false, cardio: false }
+  return logs.value[key]
 }
 function currentWeekDateFor(dayName) {
   const order = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']
   const dayIndex = order.indexOf(dayName)
   const now = new Date()
-  const currentDay = now.getDay() === 0 ? 6 : now.getDay() - 1 // 0=Mon
+  const currentDay = now.getDay() === 0 ? 6 : now.getDay() - 1
   const diff = dayIndex - currentDay
   const d = new Date(now)
   d.setDate(d.getDate() + diff)
   return d.toISOString().slice(0, 10)
 }
 
-const currentWeek = computed(() => absHistory.length + 1)
+const currentWeek = computed(() => absHistory.value.length + 1)
 
 function onDatePick() {
   if (!startDate.value) return
@@ -318,11 +318,11 @@ function weekHint(w) {
 
 function newWeek() {
   if (!confirm('Start a new week? Current week will be archived.')) return
-  if (weekLabel.value) absHistory.push({ label: weekLabel.value, week: currentWeek.value })
+  if (weekLabel.value) absHistory.value.push({ label: weekLabel.value, week: currentWeek.value })
   weekLabel.value = ''
   startDate.value = ''
-  Object.keys(logs).forEach(d => { logs[d] = { done: false, exercises: {}, finisher: false, cardio: false } })
-  save()
+  logs.value = {}
+  persist()
 }
 const GIF_URLS = {
   'V-Ups':             'https://www.youtube.com/embed/5kvKmRGADlQ?autoplay=1&mute=1',
@@ -346,27 +346,30 @@ onMounted(async () => {
   if (data) {
     weekLabel.value = data.weekLabel || ''
     startDate.value = data.startDate || ''
-    if (data.absHistory) absHistory.splice(0, absHistory.length, ...data.absHistory)
-    if (data.logs) Object.assign(logs, data.logs)
+    if (data.absHistory) absHistory.value = data.absHistory
+    if (data.logs) logs.value = data.logs
   }
   const ciData = await loadUserData(props.uid, 'checkin')
   if (ciData?.ciHistory) {
     ciHistory.value = ciData.ciHistory
     const todayEntry = ciData.ciHistory.find(e => e.date === ciTodayStr())
-    if (todayEntry) ciToday.value = todayEntry
+    if (todayEntry) ciToday.value = { ...todayEntry }
   }
 })
 
-function save() {
-  saveUserData(props.uid, 'abs', {
+async function persist() {
+  if (saving) return
+  saving = true
+  await saveUserData(props.uid, 'abs', {
     weekLabel: weekLabel.value,
     startDate: startDate.value,
-    absHistory: JSON.parse(JSON.stringify(absHistory)),
-    logs: JSON.parse(JSON.stringify(logs))
+    absHistory: JSON.parse(JSON.stringify(absHistory.value)),
+    logs: JSON.parse(JSON.stringify(logs.value))
   })
+  saving = false
 }
 
-watch([weekLabel, startDate, logs, absHistory], save, { deep: true })
+watch([weekLabel, startDate, logs, absHistory], persist, { deep: true })
 
 // ── Daily Check-In ──────────────────────────────────────────────
 const ciMeals = [
@@ -421,13 +424,13 @@ const ciLast7 = computed(() => {
 })
 // ────────────────────────────────────────────────────────────────
 
-function toggleDay(day) { getLog(day).done = !getLog(day).done; save() }
+function toggleDay(day) { getLog(day).done = !getLog(day).done; persist() }
 
 function toggleExercise(day, i) {
   const log = getLog(day)
   if (!log.exercises) log.exercises = {}
   log.exercises[i] = !log.exercises[i]
-  save()
+  persist()
 }
 
 function toggleExpand(day, i) {
