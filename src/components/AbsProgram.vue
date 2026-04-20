@@ -291,6 +291,7 @@ const activeDay = ref(days.find(d => d.name === todayDay) ? todayDay : 'Monday')
 const expanded = reactive({})
 const logs = reactive({})
 let saving = false
+let loaded = false
 
 function getLog(dayName) {
   if (!logs[dayName]) logs[dayName] = { done: false, exercises: {}, finisher: false, cardio: false }
@@ -339,6 +340,7 @@ onMounted(async () => {
       Object.keys(data.logs).forEach(k => { logs[k] = data.logs[k] })
     }
   }
+  loaded = true
   const ciData = await loadUserData(props.uid, 'checkin')
   if (ciData?.ciHistory) {
     ciHistory.value = ciData.ciHistory
@@ -348,7 +350,7 @@ onMounted(async () => {
 })
 
 async function persist() {
-  if (saving) return
+  if (!loaded || saving) return
   saving = true
   await saveUserData(props.uid, 'abs', {
     weekLabel: weekLabel.value,
