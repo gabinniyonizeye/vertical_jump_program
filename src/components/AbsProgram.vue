@@ -348,6 +348,7 @@ onMounted(async () => {
     ciHistory.value = ciData.ciHistory
     const todayEntry = ciData.ciHistory.find(e => e.date === ciTodayStr())
     if (todayEntry) ciToday.value = { ...todayEntry }
+    else ciToday.value = { date: ciTodayStr(), water: 0, meals: {}, mealNotes: {}, done: false }
   }
 })
 
@@ -389,7 +390,7 @@ function ciSetNote(id, val) { ciToday.value.mealNotes[id] = val; ciSaved.value =
 function ciSave() {
   ciToday.value.done = ciToday.value.water >= 10 && ciMealsChecked.value >= 3
   const hist = ciHistory.value.filter(e => e.date !== ciTodayStr())
-  hist.push({ ...ciToday.value })
+  hist.push({ ...ciToday.value, date: ciTodayStr() })
   ciHistory.value = hist
   saveUserData(props.uid, 'checkin', { ciHistory: hist })
   ciSaved.value = true
@@ -409,11 +410,12 @@ const ciStreak = computed(() => {
 })
 
 const ciLast7 = computed(() => {
+  const dayLetters = ['Su','Mo','Tu','We','Th','Fr','Sa']
   return Array.from({ length: 7 }, (_, i) => {
     const d = new Date(); d.setDate(d.getDate() - (6 - i))
     const dateStr = d.toISOString().slice(0, 10)
     const entry = ciHistory.value.find(e => e.date === dateStr)
-    return { label: dateStr, short: 'SMTWTFS'[d.getDay()], done: entry?.done || false, isToday: i === 6 }
+    return { label: dateStr, short: dayLetters[d.getDay()], done: entry?.done || false, isToday: i === 6 }
   })
 })
 // ────────────────────────────────────────────────────────────────
