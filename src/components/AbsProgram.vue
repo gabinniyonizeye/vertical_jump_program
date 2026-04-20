@@ -198,6 +198,20 @@ import TimerWidget from './TimerWidget.vue'
 
 const props = defineProps({ uid: String })
 
+const GIF_URLS = {
+  'V-Ups':             'https://www.youtube.com/embed/5kvKmRGADlQ?autoplay=1&mute=1',
+  'Leg Raises':        'https://www.youtube.com/embed/dGKbTKLnym4?autoplay=1&mute=1',
+  'Bicycle Crunch':    'https://www.youtube.com/embed/-nJkAJpQemI?autoplay=1&mute=1',
+  'Plank':             'https://www.youtube.com/embed/Fcbw82ykBvY?autoplay=1&mute=1',
+  'Mountain Climbers': 'https://www.youtube.com/embed/wQq3ybaLZeA?autoplay=1&mute=1',
+  'Flutter Kicks':     'https://www.youtube.com/embed/K5wuM_gNWyw?autoplay=1&mute=1',
+  'Reverse Crunch':    'https://www.youtube.com/embed/UwRfRN5fYRg?autoplay=1&mute=1',
+  'Dead Bug':          'https://www.youtube.com/embed/bXMQkRowNk8?autoplay=1&mute=1',
+  'Toe Touches':       'https://www.youtube.com/embed/9iEI95-eZWk?autoplay=1&mute=1',
+  'Crunches':          'https://www.youtube.com/embed/KojXAk4lXkE?autoplay=1&mute=1',
+  'Walking':           'https://www.youtube.com/embed/AEREJOT_Mpc?autoplay=1&mute=1',
+}
+
 const days = [
   {
     name: 'Monday', subtitle: 'Full Abs Destruction', color: '#f97316',
@@ -270,19 +284,19 @@ const days = [
 
 const weekLabel = ref('')
 const startDate = ref('')
-const absHistory = ref([])
+const absHistory = reactive([])
 const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
 const todayDay = dayNames[new Date().getDay()]
 const activeDay = ref(days.find(d => d.name === todayDay) ? todayDay : 'Monday')
 const expanded = reactive({})
-const logs = ref({})
+const logs = reactive({})
 let saving = false
 
 function todayStr() { return new Date().toISOString().slice(0, 10) }
 function getLog(dayName) {
   const key = currentWeekDateFor(dayName)
-  if (!logs.value[key]) logs.value[key] = { done: false, exercises: {}, finisher: false, cardio: false }
-  return logs.value[key]
+  if (!logs[key]) logs[key] = { done: false, exercises: {}, finisher: false, cardio: false }
+  return logs[key]
 }
 function currentWeekDateFor(dayName) {
   const order = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']
@@ -295,7 +309,7 @@ function currentWeekDateFor(dayName) {
   return d.toISOString().slice(0, 10)
 }
 
-const currentWeek = computed(() => absHistory.value.length + 1)
+const currentWeek = computed(() => absHistory.length + 1)
 
 function onDatePick() {
   if (!startDate.value) return
@@ -318,26 +332,12 @@ function weekHint(w) {
 
 function newWeek() {
   if (!confirm('Start a new week? Current week will be archived.')) return
-  if (weekLabel.value) absHistory.value.push({ label: weekLabel.value, week: currentWeek.value })
+  if (weekLabel.value) absHistory.push({ label: weekLabel.value, week: currentWeek.value })
   weekLabel.value = ''
   startDate.value = ''
-  logs.value = {}
+  Object.keys(logs).forEach(k => delete logs[k])
   persist()
 }
-const GIF_URLS = {
-  'V-Ups':             'https://www.youtube.com/embed/5kvKmRGADlQ?autoplay=1&mute=1',
-  'Leg Raises':        'https://www.youtube.com/embed/dGKbTKLnym4?autoplay=1&mute=1',
-  'Bicycle Crunch':    'https://www.youtube.com/embed/-nJkAJpQemI?autoplay=1&mute=1',
-  'Plank':             'https://www.youtube.com/embed/Fcbw82ykBvY?autoplay=1&mute=1',
-  'Mountain Climbers': 'https://www.youtube.com/embed/wQq3ybaLZeA?autoplay=1&mute=1',
-  'Flutter Kicks':     'https://www.youtube.com/embed/K5wuM_gNWyw?autoplay=1&mute=1',
-  'Reverse Crunch':    'https://www.youtube.com/embed/UwRfRN5fYRg?autoplay=1&mute=1',
-  'Dead Bug':          'https://www.youtube.com/embed/bXMQkRowNk8?autoplay=1&mute=1',
-  'Toe Touches':       'https://www.youtube.com/embed/9iEI95-eZWk?autoplay=1&mute=1',
-  'Crunches':          'https://www.youtube.com/embed/KojXAk4lXkE?autoplay=1&mute=1',
-  'Walking':           'https://www.youtube.com/embed/AEREJOT_Mpc?autoplay=1&mute=1',
-}
-
 
 const weekInfo = computed(() => weekHint(currentWeek.value))
 
@@ -346,8 +346,10 @@ onMounted(async () => {
   if (data) {
     weekLabel.value = data.weekLabel || ''
     startDate.value = data.startDate || ''
-    if (data.absHistory) absHistory.value = data.absHistory
-    if (data.logs) logs.value = data.logs
+    if (data.absHistory) absHistory.splice(0, absHistory.length, ...data.absHistory)
+    if (data.logs) {
+      Object.keys(data.logs).forEach(k => { logs[k] = data.logs[k] })
+    }
   }
   const ciData = await loadUserData(props.uid, 'checkin')
   if (ciData?.ciHistory) {
@@ -363,13 +365,13 @@ async function persist() {
   await saveUserData(props.uid, 'abs', {
     weekLabel: weekLabel.value,
     startDate: startDate.value,
-    absHistory: JSON.parse(JSON.stringify(absHistory.value)),
-    logs: JSON.parse(JSON.stringify(logs.value))
+    absHistory: JSON.parse(JSON.stringify(absHistory)),
+    logs: JSON.parse(JSON.stringify(logs))
   })
   saving = false
 }
 
-watch([weekLabel, startDate, logs, absHistory], persist, { deep: true })
+watch([weekLabel, logs], persist, { deep: true })
 
 // ── Daily Check-In ──────────────────────────────────────────────
 const ciMeals = [
