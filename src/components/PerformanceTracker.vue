@@ -2,7 +2,7 @@
   <div>
     <div class="perf-grid">
       <div class="card log-card">
-        <div class="log-title">📏 Weekly Jump Log</div>
+        <div class="log-title">📏 Vertical Jump Log</div>
         <div class="entries">
           <div v-for="(entry, i) in entries" :key="i" class="entry-row">
             <span class="week-num">Week {{ i + 1 }}</span>
@@ -81,6 +81,29 @@
     </div>
 
     <div class="card recovery-card">
+      <div class="rec-title">🔥 Abs Program Progress</div>
+      <div class="abs-prog-row">
+        <div class="abs-stat">
+          <div class="abs-val">{{ absWeekNum }}</div>
+          <div class="abs-label">Current Week</div>
+        </div>
+        <div class="abs-stat">
+          <div class="abs-val">{{ absHistory.length }}</div>
+          <div class="abs-label">Weeks Done</div>
+        </div>
+        <div class="abs-stat">
+          <div class="abs-val">{{ 8 - absWeekNum > 0 ? 8 - absWeekNum : 0 }}</div>
+          <div class="abs-label">Weeks Left</div>
+        </div>
+      </div>
+      <div class="abs-weeks">
+        <div v-for="w in 8" :key="w" class="abs-week-dot" :class="{ done: w < absWeekNum, active: w === absWeekNum }">
+          {{ w }}
+        </div>
+      </div>
+    </div>
+
+    <div class="card recovery-card">
       <div class="rec-title">🧠 Recovery Checklist</div>
       <div class="rec-items">
         <div v-for="item in recovery" :key="item.label" class="rec-item" @click="item.checked = !item.checked">
@@ -117,6 +140,8 @@ const recovery = reactive([
   { label: 'Protein ~1.6–2g/kg', sub: 'Hit your daily target', checked: false },
   { label: 'No crash dieting', sub: 'Lose fat slowly if needed (2–4 kg max)', checked: false },
 ])
+const absHistory = ref([])
+const absWeekNum = computed(() => absHistory.value.length + 1)
 let saving = false
 
 onMounted(async () => {
@@ -125,6 +150,8 @@ onMounted(async () => {
     if (data.entries) entries.value = data.entries
     if (data.recovery) recovery.splice(0, recovery.length, ...data.recovery)
   }
+  const absData = await loadUserData(props.uid, 'abs')
+  if (absData?.absHistory) absHistory.value = absData.absHistory
 })
 
 async function persist() {
@@ -244,6 +271,19 @@ const areaPoints = computed(() => {
 .stat { flex: 1; background: var(--surface2); border-radius: 8px; padding: 10px; text-align: center; }
 .stat-val { font-size: 18px; font-weight: 700; color: var(--accent); }
 .stat-label { font-size: 11px; color: var(--text); margin-top: 2px; }
+
+.abs-prog-row { display: flex; gap: 10px; margin-bottom: 14px; }
+.abs-stat { flex: 1; background: var(--surface2); border-radius: 8px; padding: 10px; text-align: center; }
+.abs-val { font-size: 22px; font-weight: 700; color: #f97316; }
+.abs-label { font-size: 11px; color: var(--text); margin-top: 2px; }
+.abs-weeks { display: flex; gap: 6px; flex-wrap: wrap; }
+.abs-week-dot {
+  width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: var(--text); transition: all 0.2s;
+}
+.abs-week-dot.done { background: #22c55e; border-color: #22c55e; color: #fff; }
+.abs-week-dot.active { background: #f97316; border-color: #f97316; color: #fff; }
 
 .recovery-card { margin-bottom: 16px; }
 .rec-items { display: flex; flex-direction: column; gap: 10px; }

@@ -40,10 +40,15 @@
         <div class="stat-val">{{ totalSessions }}</div>
         <div class="stat-label">Total Sessions</div>
       </div>
-      <div class="stat-card card">
+      <div class="stat-card card" style="cursor:pointer" @click="$emit('go','performance')">
         <div class="stat-icon">📏</div>
-        <div class="stat-val">{{ latestJump || '—' }}<span v-if="latestJump" class="stat-unit">cm</span></div>
-        <div class="stat-label">Latest Jump</div>
+        <div class="stat-val">{{ latestVert || '—' }}<span v-if="latestVert" class="stat-unit">cm</span></div>
+        <div class="stat-label">Vert Jump</div>
+      </div>
+      <div class="stat-card card" style="cursor:pointer" @click="$emit('go','performance')">
+        <div class="stat-icon">🔥</div>
+        <div class="stat-val">{{ latestAbs || '—' }}<span v-if="latestAbs" class="stat-unit">wk</span></div>
+        <div class="stat-label">Abs Week</div>
       </div>
     </div>
 
@@ -79,7 +84,7 @@
 <script setup>
 import { computed } from 'vue'
 
-const props = defineProps({ trackerRows: Array, jumpEntries: Array })
+const props = defineProps({ trackerRows: Array, jumpEntries: Array, absWeek: Number })
 defineEmits(['go'])
 
 const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
@@ -123,22 +128,28 @@ const totalSessions = computed(() => {
 })
 
 const streak = computed(() => {
-  const history = JSON.parse(localStorage.getItem(`vjp_history_${window.__vjp_uid || 'guest'}`) || '[]')
+  const ciKey = `vjp_checkin_${window.__vjp_uid || 'guest'}`
+  const hist = JSON.parse(localStorage.getItem(ciKey) || '[]')
   let s = 0
-  for (let i = history.length - 1; i >= 0; i--) {
-    const done = history[i].filter(r => r.done).length
-    if (done >= 5) s++
-    else break
+  const today = new Date()
+  for (let i = 0; i <= 365; i++) {
+    const d = new Date(today)
+    d.setDate(d.getDate() - i)
+    const dateStr = d.toISOString().slice(0, 10)
+    const entry = hist.find(e => e.date === dateStr)
+    if (entry?.done) s++
+    else if (i > 0) break
   }
-  if (weekDone.value >= 5) s++
   return s
 })
 
-const latestJump = computed(() => {
+const latestVert = computed(() => {
   if (!props.jumpEntries) return null
   const filled = props.jumpEntries.filter(v => v !== '' && Number(v) > 0)
   return filled.length ? filled[filled.length - 1] : null
 })
+
+const latestAbs = computed(() => props.absWeek || null)
 
 const tips = [
   'Warm up your ankles before every session — stiff ankles kill your jump.',
@@ -207,8 +218,8 @@ const tip = computed(() => tips[new Date().getDate() % tips.length])
 
 .stats-row {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
   margin-bottom: 16px;
 }
 
@@ -266,7 +277,7 @@ const tip = computed(() => tips[new Date().getDate() % tips.length])
 .tip-text { font-size: 14px; color: var(--text); line-height: 1.5; }
 
 @media (max-width: 600px) {
-  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .stats-row { grid-template-columns: repeat(3, 1fr); }
   .today-card { flex-direction: column; }
   .today-right { flex-direction: row; width: 100%; justify-content: space-between; }
 }

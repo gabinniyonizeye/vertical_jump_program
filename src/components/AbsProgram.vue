@@ -271,7 +271,9 @@ const days = [
 const weekLabel = ref('')
 const startDate = ref('')
 const absHistory = reactive([])
-const activeDay = ref('Monday')
+const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
+const todayDay = dayNames[new Date().getDay()]
+const activeDay = ref(days.find(d => d.name === todayDay) ? todayDay : 'Monday')
 const expanded = reactive({})
 const logs = reactive({})
 
