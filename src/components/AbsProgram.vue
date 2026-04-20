@@ -358,10 +358,15 @@ onMounted(async () => {
 })
 
 function save() {
-  saveUserData(props.uid, 'abs', { weekLabel: weekLabel.value, startDate: startDate.value, absHistory: JSON.parse(JSON.stringify(absHistory)), logs })
+  saveUserData(props.uid, 'abs', {
+    weekLabel: weekLabel.value,
+    startDate: startDate.value,
+    absHistory: JSON.parse(JSON.stringify(absHistory)),
+    logs: JSON.parse(JSON.stringify(logs))
+  })
 }
 
-watch(logs, save, { deep: true })
+watch([weekLabel, startDate, logs, absHistory], save, { deep: true })
 
 // ── Daily Check-In ──────────────────────────────────────────────
 const ciMeals = [

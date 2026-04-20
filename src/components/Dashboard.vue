@@ -90,6 +90,9 @@ defineEmits(['go'])
 
 const absLogs = ref({})
 const ciHistory = ref([])
+const trackerData = ref([])
+
+const perfEntries = ref([])
 
 onMounted(async () => {
   const absData = await loadUserData(props.uid, 'abs')
@@ -97,6 +100,12 @@ onMounted(async () => {
 
   const ciData = await loadUserData(props.uid, 'checkin')
   if (ciData?.ciHistory) ciHistory.value = ciData.ciHistory
+
+  const tracker = await loadUserData(props.uid, 'tracker')
+  if (tracker?.rows) trackerData.value = tracker.rows
+
+  const perf = await loadUserData(props.uid, 'performance')
+  if (perf?.entries) perfEntries.value = perf.entries
 })
 
 const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
@@ -128,15 +137,14 @@ const weekDays = computed(() => {
     name,
     short: name[0],
     color: dayMap[name].color,
-    done: props.trackerRows?.find(r => r.day === name)?.done || false,
+    done: trackerData.value?.find(r => r.day === name)?.done || false,
   }))
 })
 
 const weekDone = computed(() => weekDays.value.filter(d => d.done).length)
 
 const totalSessions = computed(() => {
-  const all = JSON.parse(localStorage.getItem(`vjp_history_${window.__vjp_uid || 'guest'}`) || '[]')
-  return all.reduce((sum, w) => sum + w.filter(r => r.done).length, 0) + weekDone.value
+  return weekDone.value
 })
 
 const streak = computed(() => {
@@ -154,8 +162,7 @@ const streak = computed(() => {
 })
 
 const latestVert = computed(() => {
-  if (!props.jumpEntries) return null
-  const filled = props.jumpEntries.filter(v => v !== '' && Number(v) > 0)
+  const filled = perfEntries.value.filter(v => v !== '' && Number(v) > 0)
   return filled.length ? filled[filled.length - 1] : null
 })
 
