@@ -82,10 +82,24 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { loadUserData } from '../useAuth.js'
 
-const props = defineProps({ trackerRows: Array, jumpEntries: Array, absLogs: Object, uid: String })
+const props = defineProps({ trackerRows: Array, jumpEntries: Array, uid: String })
 defineEmits(['go'])
+
+const absLogs = ref({})
+const ciHistory = ref([])
+
+onMounted(async () => {
+  // load abs logs from firestore
+  const absData = await loadUserData(props.uid, 'abs')
+  if (absData?.logs) absLogs.value = absData.logs
+
+  // load daily check-in from localStorage
+  const ciKey = `vjp_checkin_${props.uid || 'guest'}`
+  ciHistory.value = JSON.parse(localStorage.getItem(ciKey) || '[]')
+})
 
 const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
 const todayName = computed(() => dayNames[new Date().getDay()])
@@ -128,15 +142,13 @@ const totalSessions = computed(() => {
 })
 
 const streak = computed(() => {
-  const ciKey = `vjp_checkin_${props.uid || 'guest'}`
-  const hist = JSON.parse(localStorage.getItem(ciKey) || '[]')
   let s = 0
   const today = new Date()
   for (let i = 0; i <= 365; i++) {
     const d = new Date(today)
     d.setDate(d.getDate() - i)
     const dateStr = d.toISOString().slice(0, 10)
-    const entry = hist.find(e => e.date === dateStr)
+    const entry = ciHistory.value.find(e => e.date === dateStr)
     if (entry?.done) s++
     else if (i > 0) break
   }
@@ -150,7 +162,8 @@ const latestVert = computed(() => {
 })
 
 const latestAbs = computed(() => {
-  if (!props.absLogs) return null
+  const logs = absLogs.value
+  if (!logs || !Object.keys(logs).length) return null
   const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
   let s = 0
   const today = new Date()
@@ -158,7 +171,7 @@ const latestAbs = computed(() => {
     const d = new Date(today)
     d.setDate(d.getDate() - i)
     const name = dayNames[d.getDay()]
-    if (props.absLogs[name]?.done) s++
+    if (logs[name]?.done) s++
     else if (i > 0) break
   }
   return s || null
