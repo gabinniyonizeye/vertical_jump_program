@@ -1,104 +1,96 @@
 <template>
+  <!-- Splash -->
   <div v-if="loading" class="splash">
-    <div class="splash-icon">🏀</div>
-    <div class="splash-text">Loading…</div>
+    <div class="splash-ball">🏀</div>
+    <div class="splash-brand">NYIRABYO <span>Basketball</span></div>
+    <div class="splash-sub">Loading your journey…</div>
   </div>
 
   <!-- Not logged in -->
   <LoginPage v-else-if="!user" @logged-in="onLogin" />
 
-  <!-- Pending approval -->
-  <PendingPage v-else-if="user && userProfile && userProfile.status === 'pending'"
-    :session="userProfile" @logout="doLogout" />
+  <!-- Pending -->
+  <div v-else-if="userProfile?.status === 'pending'" class="status-screen">
+    <div class="status-card card">
+      <div class="status-icon">⏳</div>
+      <div class="status-title">Awaiting Approval</div>
+      <p class="status-desc">Your account is being reviewed. You'll be notified once confirmed.</p>
+      <a href="https://wa.me/250780960424" target="_blank" class="wa-btn">💬 WhatsApp: +250780960424</a>
+      <button class="btn-ghost" @click="doLogout">Sign Out</button>
+    </div>
+  </div>
 
   <!-- Rejected -->
-  <div v-else-if="user && userProfile && userProfile.status === 'rejected'" class="rejected-wrap">
-    <div class="card rejected-card">
-      <div style="font-size:40px">❌</div>
-      <div class="rej-title">Account Not Approved</div>
-      <p class="rej-desc">Your account was not approved. Please contact the admin on WhatsApp to resolve this.</p>
+  <div v-else-if="userProfile?.status === 'rejected'" class="status-screen">
+    <div class="status-card card">
+      <div class="status-icon">❌</div>
+      <div class="status-title">Account Not Approved</div>
+      <p class="status-desc">Contact admin to resolve this issue.</p>
       <a href="https://wa.me/250780960424" target="_blank" class="wa-btn">💬 WhatsApp: +250780960424</a>
-      <button class="logout-btn" @click="doLogout">Logout</button>
+      <button class="btn-ghost" @click="doLogout">Sign Out</button>
     </div>
   </div>
 
   <!-- Admin -->
   <div v-else-if="user && isAdmin(user.email)" id="app">
     <header class="app-header">
-      <div class="header-inner">
-        <div class="logo">
-          <span class="logo-icon">🛡️</span>
-          <div>
-            <div class="logo-title">Admin Panel</div>
-            <div class="logo-sub">Vertical Jump Program</div>
-          </div>
+      <div class="header-brand">
+        <span class="header-logo">🛡️</span>
+        <div>
+          <div class="header-title">Admin <span>Panel</span></div>
+          <div class="header-sub">NYIRABYO Basketball</div>
         </div>
-        <button class="logout-btn" @click="doLogout">Logout</button>
       </div>
+      <button class="btn-ghost" @click="doLogout">Sign Out</button>
     </header>
-    <main class="main-content">
-      <AdminPanel />
-    </main>
+    <AdminPanel />
   </div>
 
-  <!-- Regular confirmed user -->
+  <!-- Onboarding (new user, profile not complete) -->
+  <PlayerOnboarding
+    v-else-if="user && userProfile && !userProfile.profileComplete"
+    :uid="user.uid"
+    @done="onProfileDone"
+  />
+
+  <!-- Main App -->
   <div v-else-if="user && userProfile" id="app">
+    <!-- Header -->
     <header class="app-header">
-      <div class="header-inner">
-        <div class="logo">
-          <span class="logo-icon">🏀</span>
-          <div>
-            <div class="logo-title">Vertical Jump Program</div>
-            <div class="logo-sub">Train smart. Jump higher.</div>
-          </div>
-        </div>
-        <div class="header-right">
-          <span class="badge" :style="{ background: todayColor + '22', color: todayColor }">
-            Today: {{ todayName }}
-          </span>
-          <span class="user-name-badge">👤 {{ userProfile.name }}</span>
-          <button class="logout-btn" @click="doLogout">Logout</button>
+      <div class="header-brand">
+        <span class="header-logo">🏀</span>
+        <div>
+          <div class="header-title">NYIRABYO <span>Basketball</span></div>
+          <div class="header-sub">{{ greeting }}, {{ firstName }} 👋</div>
         </div>
       </div>
-      <nav class="tabs">
-        <button
-          v-for="tab in tabs" :key="tab.id"
-          class="tab" :class="{ active: activeTab === tab.id }"
-          @click="activeTab = tab.id"
-        >{{ tab.icon }} {{ tab.label }}</button>
-      </nav>
+      <div class="header-actions">
+        <div class="xp-pill">
+          <span class="xp-icon">⭐</span>
+          <span class="xp-val">Lv {{ playerLevel }}</span>
+        </div>
+        <button class="btn-ghost" @click="doLogout" style="padding:6px 10px;font-size:12px">Sign Out</button>
+      </div>
     </header>
 
-    <main class="main-content">
-      <div v-if="activeTab === 'dashboard'">
-        <div class="section-title">🏠 Dashboard</div>
-        <Dashboard :trackerRows="trackerRows" :jumpEntries="jumpEntries" :uid="user.uid" @go="activeTab = $event" />
-      </div>
-      <div v-if="activeTab === 'schedule'">
-        <div class="section-title">📅 Weekly Schedule</div>
-        <WeeklySchedule @select="goToWorkout" />
-      </div>
-      <div v-if="activeTab === 'workout'">
-        <div class="section-title">🏋️ Gym Sessions</div>
-        <WorkoutDetail />
-      </div>
-      <div v-if="activeTab === 'tracker'">
-        <div class="section-title">📊 Weekly Tracker</div>
-        <WeeklyTracker :uid="user.uid" />
-      </div>
-      <div v-if="activeTab === 'performance'">
-        <div class="section-title">📈 Performance & Recovery</div>
-        <PerformanceTracker :uid="user.uid" />
-      </div>
-      <div v-if="activeTab === 'airalert'">
-        <div class="section-title">🏃 Air Alert® Program</div>
-        <AirAlert :uid="user.uid" />
-      </div>
-      <div v-if="activeTab === 'abs'">
-        <div class="section-title">🔥 Elite Abs Program</div>
-        <AbsProgram :uid="user.uid" />
-      </div>
+    <!-- Page content -->
+    <main>
+      <Dashboard      v-if="tab === 'home'"      :uid="user.uid" :profile="userProfile" @go="tab = $event" />
+      <TrainingModules v-if="tab === 'train'"    :profile="userProfile" />
+      <ProgressTracker v-if="tab === 'progress'" :uid="user.uid" :profile="userProfile" />
+      <Tools           v-if="tab === 'tools'"    />
+      <Community       v-if="tab === 'community'" :profile="userProfile" />
     </main>
+
+    <!-- Bottom Nav -->
+    <nav class="bottom-nav">
+      <button v-for="n in navItems" :key="n.id"
+        class="nav-item" :class="{ active: tab === n.id }"
+        @click="tab = n.id">
+        <span class="nav-icon">{{ n.icon }}</span>
+        <span>{{ n.label }}</span>
+      </button>
+    </nav>
   </div>
 </template>
 
@@ -106,19 +98,18 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { onAuthChange, logout, getUserProfile, isAdmin } from './useAuth.js'
 import LoginPage from './components/LoginPage.vue'
-import PendingPage from './components/PendingPage.vue'
 import AdminPanel from './components/AdminPanel.vue'
-import WeeklySchedule from './components/WeeklySchedule.vue'
-import WorkoutDetail from './components/WorkoutDetail.vue'
-import WeeklyTracker from './components/WeeklyTracker.vue'
-import PerformanceTracker from './components/PerformanceTracker.vue'
-import AirAlert from './components/AirAlert.vue'
-import AbsProgram from './components/AbsProgram.vue'
+import PlayerOnboarding from './components/PlayerOnboarding.vue'
 import Dashboard from './components/Dashboard.vue'
+import TrainingModules from './components/TrainingModules.vue'
+import ProgressTracker from './components/ProgressTracker.vue'
+import Tools from './components/Tools.vue'
+import Community from './components/Community.vue'
 
 const loading = ref(true)
 const user = ref(null)
 const userProfile = ref(null)
+const tab = ref('home')
 
 let unsubscribe = null
 
@@ -129,7 +120,7 @@ onMounted(() => {
       if (!isAdmin(firebaseUser.email)) {
         userProfile.value = await getUserProfile(firebaseUser.uid)
       } else {
-        userProfile.value = { name: 'Admin', status: 'confirmed' }
+        userProfile.value = { name: 'Admin', status: 'confirmed', profileComplete: true }
       }
     } else {
       user.value = null
@@ -141,134 +132,62 @@ onMounted(() => {
 
 onUnmounted(() => { if (unsubscribe) unsubscribe() })
 
-async function onLogin() {
-  // auth state change handled by onAuthChange above
+async function onLogin() {}
+
+async function onProfileDone(profile) {
+  userProfile.value = { ...userProfile.value, ...profile, profileComplete: true }
 }
 
-async function doLogout() {
-  await logout()
-}
+async function doLogout() { await logout() }
 
-const tabs = [
-  { id: 'dashboard',   icon: '🏠', label: 'Dashboard' },
-  { id: 'schedule',    icon: '📅', label: 'Schedule' },
-  { id: 'workout',     icon: '🏋️', label: 'Workouts' },
-  { id: 'tracker',     icon: '📊', label: 'Tracker' },
-  { id: 'performance', icon: '📈', label: 'Performance' },
-  { id: 'airalert',    icon: '🏃', label: 'Air Alert®' },
-  { id: 'abs',         icon: '🔥', label: 'Abs Program' },
+const navItems = [
+  { id: 'home',      icon: '🏠', label: 'Home' },
+  { id: 'train',     icon: '🏀', label: 'Train' },
+  { id: 'progress',  icon: '📈', label: 'Progress' },
+  { id: 'tools',     icon: '🔧', label: 'Tools' },
+  { id: 'community', icon: '👥', label: 'Community' },
 ]
-const activeTab = ref('dashboard')
 
-const dayColors = {
-  Monday: '#f97316', Tuesday: '#6366f1', Wednesday: '#3b82f6',
-  Thursday: '#6366f1', Friday: '#6366f1', Saturday: '#22c55e', Sunday: '#eab308'
-}
-const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
-const todayName = computed(() => dayNames[new Date().getDay()])
-const todayColor = computed(() => dayColors[todayName.value] || '#f97316')
+const firstName = computed(() => userProfile.value?.name?.split(' ')[0] || 'Athlete')
 
-// Dummy props for Dashboard (WeeklyTracker manages its own state)
-const trackerRows = ref([])
-const jumpEntries = ref([])
+const hour = new Date().getHours()
+const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
 
-function goToWorkout(day) {
-  if (['Monday','Wednesday','Saturday'].includes(day.name)) activeTab.value = 'workout'
-}
+const playerLevel = computed(() => {
+  // Simple level based on profile completeness
+  return userProfile.value?.profileComplete ? 1 : 0
+})
 </script>
 
 <style>
-.splash {
+/* Status screens */
+.status-screen {
   min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-}
-.splash-icon { font-size: 56px; animation: pulse 1.2s infinite; }
-.splash-text { color: var(--text); font-size: 16px; }
-@keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.15); } }
-
-.rejected-wrap {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: flex; align-items: center; justify-content: center;
   padding: 24px;
 }
-.rejected-card {
-  max-width: 420px;
+.status-card {
+  max-width: 380px; width: 100%;
   text-align: center;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  align-items: center;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 14px;
 }
-.rej-title { font-size: 20px; font-weight: 700; color: var(--text-h); }
-.rej-desc { font-size: 14px; color: var(--text); line-height: 1.6; }
+.status-icon { font-size: 48px; }
+.status-title { font-size: 20px; font-weight: 800; color: var(--text-h); }
+.status-desc { font-size: 14px; color: var(--text); line-height: 1.6; }
 .wa-btn {
-  background: #22c55e;
-  color: #fff;
-  font-weight: 700;
-  font-size: 15px;
-  padding: 11px 20px;
-  border-radius: 8px;
-  text-decoration: none;
+  background: #16a34a; color: #fff;
+  font-weight: 700; font-size: 14px;
+  padding: 12px 24px; border-radius: var(--radius-sm);
+  text-decoration: none; width: 100%; text-align: center; display: block;
 }
 
-.app-header {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  background: var(--bg);
-  border-bottom: 1px solid var(--border);
-  padding: 16px 0 0;
-  margin-bottom: 24px;
+/* XP pill in header */
+.xp-pill {
+  display: flex; align-items: center; gap: 4px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 99px; padding: 5px 10px;
 }
-.header-inner {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 14px;
-}
-.logo { display: flex; align-items: center; gap: 12px; }
-.logo-icon { font-size: 28px; }
-.logo-title { font-size: 18px; font-weight: 700; color: var(--text-h); }
-.logo-sub { font-size: 12px; color: var(--text); }
-.header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.user-name-badge { font-size: 13px; color: var(--text); font-weight: 600; }
-.logout-btn {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  color: var(--text);
-  border-radius: 8px;
-  padding: 6px 14px;
-  font-size: 13px;
-  font-weight: 600;
-  transition: all 0.2s;
-}
-.logout-btn:hover { color: var(--accent); border-color: var(--accent); }
-.tabs { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 1px; }
-.tab {
-  padding: 7px 12px;
-  border-radius: 8px 8px 0 0;
-  border: 1px solid transparent;
-  border-bottom: none;
-  background: transparent;
-  color: var(--text);
-  font-size: 12px;
-  font-weight: 500;
-  white-space: nowrap;
-  transition: all 0.2s;
-}
-.tab:hover { color: var(--text-h); background: var(--surface); }
-.tab.active {
-  background: var(--surface);
-  color: var(--accent);
-  border-color: var(--border);
-  border-bottom-color: var(--surface);
-}
-.main-content { padding-top: 4px; }
-.section-title { font-size: 20px; font-weight: 700; color: var(--text-h); margin-bottom: 16px; }
+.xp-icon { font-size: 13px; }
+.xp-val { font-size: 12px; font-weight: 700; color: var(--yellow); }
 </style>

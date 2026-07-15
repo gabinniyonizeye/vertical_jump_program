@@ -1,10 +1,10 @@
 {
-  "name": "Vertical Jump Program",
-  "short_name": "Jump Trainer",
-  "description": "Track your vertical jump training with Air Alert and gym workouts",
+  "name": "NYIRABYO Basketball",
+  "short_name": "NYIRABYO",
+  "description": "Your complete basketball player development platform. Train smarter, jump higher, play better.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0f0f13",
+  "background_color": "#080810",
   "theme_color": "#f97316",
   "orientation": "portrait-primary",
   "icons": [
