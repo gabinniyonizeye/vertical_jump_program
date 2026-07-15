@@ -2,6 +2,7 @@
   <!-- Splash -->
   <div v-if="loading" class="splash">
     <img src="/NYIRABYOFinal-01.png" class="splash-logo" alt="NYIRABYO Basketball" />
+    <div class="splash-brand">NYIRABYO <span>Basketball</span></div>
     <div class="splash-sub">Loading your journey…</div>
   </div>
 
@@ -36,7 +37,8 @@
       <div class="header-brand">
         <img src="/NYIRABYOFinal-01.png" class="header-logo-img" alt="NYIRABYO" />
         <div>
-          <div class="header-title">Admin <span>Panel</span></div>
+          <div class="header-title">NYIRABYO <span>Basketball</span></div>
+          <div class="header-sub">Admin Panel</div>
         </div>
       </div>
       <button class="btn-ghost" @click="doLogout">Sign Out</button>
@@ -57,7 +59,10 @@
     <header class="app-header">
       <div class="header-brand">
         <img src="/NYIRABYOFinal-01.png" class="header-logo-img" alt="NYIRABYO" />
-        <div class="header-sub">{{ greeting }}, {{ firstName }} 👋</div>
+        <div>
+          <div class="header-title">NYIRABYO <span>Basketball</span></div>
+          <div class="header-sub">{{ greeting }}, {{ firstName }} 👋</div>
+        </div>
       </div>
       <div class="header-actions">
         <div class="xp-pill">
@@ -184,16 +189,23 @@ const playerLevel = computed(() => {
   border-radius: 99px; padding: 5px 10px;
 }
 .xp-icon { font-size: 13px; }
-.xp-val { font-size: 12px; font-weight: 700; color: var(--yellow); }
+.splash-brand {
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--text-h);
+  letter-spacing: -0.3px;
+  margin-top: -4px;
+}
+.splash-brand span { color: var(--accent); }
 
 .splash-logo {
-  width: 180px;
+  width: 140px;
   object-fit: contain;
   animation: fadeUp 0.6s ease both;
 }
 
 .header-logo-img {
-  height: 36px;
+  height: 28px;
   width: auto;
   object-fit: contain;
   flex-shrink: 0;

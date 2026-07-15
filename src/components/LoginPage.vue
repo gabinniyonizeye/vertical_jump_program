@@ -3,6 +3,7 @@
     <!-- Hero -->
     <div class="auth-hero">
       <img src="/NYIRABYOFinal-01.png" class="hero-logo" alt="NYIRABYO Basketball" />
+      <div class="hero-brand">NYIRABYO <span>Basketball</span></div>
       <div class="hero-tagline">Your basketball journey starts here.</div>
     </div>
 
@@ -150,13 +151,20 @@ async function doSignup() {
 }
 
 .hero-logo {
-  width: 200px;
+  width: 140px;
   object-fit: contain;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   animation: fadeUp 0.5s ease both;
 }
 
-.hero-brand { display: none; }
+.hero-brand {
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--text-h);
+  letter-spacing: -0.4px;
+  margin-bottom: 6px;
+}
+.hero-brand span { color: var(--accent); }
 
 .hero-tagline {
   font-size: 14px;
@@ -263,7 +271,7 @@ async function doSignup() {
   text-align: center;
 }
 .done-logo {
-  width: 160px;
+  width: 120px;
   object-fit: contain;
   animation: fadeUp 0.5s ease both;
 }
