@@ -2,8 +2,7 @@
   <div class="auth-root">
     <!-- Hero -->
     <div class="auth-hero">
-      <div class="hero-ball">🏀</div>
-      <div class="hero-brand">NYIRABYO <span>Basketball</span></div>
+      <img src="/NYIRABYOFinal-01.png" class="hero-logo" alt="NYIRABYO Basketball" />
       <div class="hero-tagline">Your basketball journey starts here.</div>
     </div>
 
@@ -70,7 +69,7 @@
 
       <!-- SUCCESS -->
       <div v-if="mode === 'done'" class="done-box fade-up">
-        <div class="done-ball">🏀</div>
+        <img src="/NYIRABYOFinal-01.png" class="done-logo" alt="NYIRABYO" />
         <div class="done-title">You're on the court!</div>
         <p class="done-desc">Your account has been submitted. Once the admin confirms your payment, you'll be ready to start your basketball journey.</p>
         <a href="https://wa.me/250780960424" target="_blank" class="wa-btn">💬 WhatsApp Support</a>
@@ -150,21 +149,14 @@ async function doSignup() {
   pointer-events: none;
 }
 
-.hero-ball {
-  font-size: 56px;
-  animation: bounceBall 1.4s ease-in-out infinite;
-  display: block;
+.hero-logo {
+  width: 200px;
+  object-fit: contain;
   margin-bottom: 12px;
+  animation: fadeUp 0.5s ease both;
 }
 
-.hero-brand {
-  font-size: 28px;
-  font-weight: 900;
-  color: var(--text-h);
-  letter-spacing: -0.5px;
-  margin-bottom: 6px;
-}
-.hero-brand span { color: var(--accent); }
+.hero-brand { display: none; }
 
 .hero-tagline {
   font-size: 14px;
@@ -270,7 +262,11 @@ async function doSignup() {
   padding: 20px 0;
   text-align: center;
 }
-.done-ball { font-size: 56px; animation: bounceBall 1.4s ease-in-out infinite; }
+.done-logo {
+  width: 160px;
+  object-fit: contain;
+  animation: fadeUp 0.5s ease both;
+}
 .done-title { font-size: 22px; font-weight: 800; color: var(--text-h); }
 .done-desc { font-size: 14px; color: var(--text); line-height: 1.6; max-width: 320px; }
 .wa-btn {

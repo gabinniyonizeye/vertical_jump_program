@@ -1,8 +1,7 @@
 <template>
   <!-- Splash -->
   <div v-if="loading" class="splash">
-    <div class="splash-ball">🏀</div>
-    <div class="splash-brand">NYIRABYO <span>Basketball</span></div>
+    <img src="/NYIRABYOFinal-01.png" class="splash-logo" alt="NYIRABYO Basketball" />
     <div class="splash-sub">Loading your journey…</div>
   </div>
 
@@ -35,10 +34,9 @@
   <div v-else-if="user && isAdmin(user.email)" id="app">
     <header class="app-header">
       <div class="header-brand">
-        <span class="header-logo">🛡️</span>
+        <img src="/NYIRABYOFinal-01.png" class="header-logo-img" alt="NYIRABYO" />
         <div>
           <div class="header-title">Admin <span>Panel</span></div>
-          <div class="header-sub">NYIRABYO Basketball</div>
         </div>
       </div>
       <button class="btn-ghost" @click="doLogout">Sign Out</button>
@@ -58,11 +56,8 @@
     <!-- Header -->
     <header class="app-header">
       <div class="header-brand">
-        <span class="header-logo">🏀</span>
-        <div>
-          <div class="header-title">NYIRABYO <span>Basketball</span></div>
-          <div class="header-sub">{{ greeting }}, {{ firstName }} 👋</div>
-        </div>
+        <img src="/NYIRABYOFinal-01.png" class="header-logo-img" alt="NYIRABYO" />
+        <div class="header-sub">{{ greeting }}, {{ firstName }} 👋</div>
       </div>
       <div class="header-actions">
         <div class="xp-pill">
@@ -190,4 +185,17 @@ const playerLevel = computed(() => {
 }
 .xp-icon { font-size: 13px; }
 .xp-val { font-size: 12px; font-weight: 700; color: var(--yellow); }
+
+.splash-logo {
+  width: 180px;
+  object-fit: contain;
+  animation: fadeUp 0.6s ease both;
+}
+
+.header-logo-img {
+  height: 36px;
+  width: auto;
+  object-fit: contain;
+  flex-shrink: 0;
+}
 </style>
