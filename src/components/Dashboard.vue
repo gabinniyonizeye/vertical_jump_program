@@ -208,18 +208,18 @@ const todayName = computed(() => dayNames[new Date().getDay()])
 const todayIndex = computed(() => new Date().getDay() === 0 ? 6 : new Date().getDay() - 1)
 
 const dayMap = {
-  Monday:    { title: 'Strength A — Squat Focus',     location: 'Gym',  color: '#f97316', icon: '🏋️', tab: 'training',
+  Monday:    { title: 'Strength A — Squat Focus',     location: 'Gym',  color: '#f97316', icon: '🏋️', tab: 'lower',
                exercises: ['Back Squat 4×4–6', 'Bulgarian Split Squat 3×6–8', 'Romanian Deadlift 3×6–8', 'Calf Raises 4×15', 'Core 3×45s'] },
-  Tuesday:   { title: 'Ball Handling & Shooting',     location: 'Court',color: '#6366f1', icon: '🏀', tab: 'training',
-               exercises: ['Stationary Dribbling 10min', 'Form Shooting 50 reps', 'Cone Dribbling 3×', 'Free Throws 30 reps'] },
-  Wednesday: { title: 'Strength B — Posterior Chain', location: 'Gym',  color: '#3b82f6', icon: '🏋️', tab: 'training',
-               exercises: ['Deadlift 3–4×3–5', 'Hip Thrust 3×6–8', 'Box Jumps 4×4–6', 'Step-Ups 3×8/leg'] },
-  Thursday:  { title: 'Plyometrics & Agility',        location: 'Home', color: '#8b5cf6', icon: '⚡', tab: 'training',
-               exercises: ['Jump Rope 5min', 'Ankle Hops 3×20', 'Lateral Bounds 3×10', 'Depth Drops 3×5'] },
-  Friday:    { title: 'Shooting & Finishing',         location: 'Court',color: '#6366f1', icon: '🎯', tab: 'training',
-               exercises: ['Layup Drills 5min', 'Mid-Range 40 reps', 'Three Pointers 30 reps', 'Euro Step 3×5'] },
-  Saturday:  { title: 'Power — Plyometrics',          location: 'Gym',  color: '#22c55e', icon: '💥', tab: 'training',
-               exercises: ['Power Cleans 4×3–5', 'Weighted Jump Squats 4×5', 'Depth Jumps 3×4–6', 'Walking Lunges 3×10'] },
+  Tuesday:   { title: 'Speed & Explosiveness',        location: 'Track + Court',color: '#6366f1', icon: '⚡', tab: 'speed',
+               exercises: ['10 m Sprint ×6', '20 m Sprint ×6', 'Defensive Slides ×6', 'Broad & Box Jumps'] },
+  Wednesday: { title: 'Upper Body & Finishing',       location: 'Gym + Court',  color: '#3b82f6', icon: '🏋️', tab: 'upper',
+               exercises: ['Bench Press 4×6', 'Pull-ups 4 sets', 'Overhead Press 3×8', 'Finishing + Film'] },
+  Thursday:  { title: 'Skill Day — Handle & Shoot',   location: 'Court', color: '#8b5cf6', icon: '🏀', tab: 'ballhandling',
+               exercises: ['Ball Handling 45 min', 'Shooting 45 min', '1v1, 2v2 or 3v3', 'Read Defenders'] },
+  Friday:    { title: 'Competition Day',              location: 'Court',color: '#6366f1', icon: '🏆', tab: 'shooting',
+               exercises: ['1v1, 3v3 or 5v5', 'Defend with intent', 'Finish through contact', 'Compete & communicate'] },
+  Saturday:  { title: 'Power Day — Deadlift Focus',   location: 'Gym + Court',  color: '#22c55e', icon: '💥', tab: 'explosive',
+               exercises: ['Deadlift 4×5', 'Hip Thrust 3×10', 'Box Jump 5×5', 'Transition court work'] },
   Sunday:    { title: 'Active Recovery',              location: 'Rest', color: '#eab308', icon: '😴', tab: 'schedule',
                exercises: [], restMsg: 'Light stretch, foam roll, hydrate. Your body rebuilds today.' },
 }
@@ -305,44 +305,55 @@ const tip = computed(() => tips[new Date().getDate() % tips.length])
 .journey-hero {
   margin-bottom: 12px;
   border-left: 3px solid var(--accent);
-  background: linear-gradient(135deg, #1a0e00 0%, var(--surface) 100%);
+  background: linear-gradient(135deg, #1a0800 0%, #0f0f1e 100%);
+  position: relative; overflow: hidden;
+}
+.journey-hero::after {
+  content: '';
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 120px; height: 120px;
+  background: radial-gradient(circle, rgba(249,115,22,0.12) 0%, transparent 70%);
+  pointer-events: none;
 }
 .journey-top { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
-.journey-emoji-big { font-size: 36px; flex-shrink: 0; }
+.journey-emoji-big { font-size: 38px; flex-shrink: 0; animation: float 3s ease-in-out infinite; }
 .journey-info { flex: 1; min-width: 0; }
-.journey-label { font-size: 10px; font-weight: 700; color: var(--text); letter-spacing: 1px; text-transform: uppercase; }
-.journey-name { font-size: 17px; font-weight: 800; color: var(--text-h); }
-.journey-milestone { font-size: 12px; color: var(--text); margin-top: 2px; }
+.journey-label { font-size: 10px; font-weight: 700; color: var(--text); letter-spacing: 1.5px; text-transform: uppercase; }
+.journey-name { font-size: 18px; font-weight: 800; color: var(--text-h); }
+.journey-milestone { font-size: 12px; color: var(--accent); margin-top: 2px; font-weight: 600; }
 .journey-weeks { text-align: center; flex-shrink: 0; }
-.weeks-num { font-size: 24px; font-weight: 900; color: var(--accent); }
+.weeks-num { font-size: 28px; font-weight: 900; color: var(--accent); line-height: 1; }
 .weeks-label { font-size: 10px; color: var(--text); font-weight: 600; }
 .journey-progress-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-.progress-pct { font-size: 12px; font-weight: 700; color: var(--text2); flex-shrink: 0; }
+.progress-pct { font-size: 12px; font-weight: 700; color: var(--accent); flex-shrink: 0; }
 .journey-weeks-row { display: flex; gap: 5px; flex-wrap: wrap; }
 .journey-week-dot {
   width: 28px; height: 28px;
-  border-radius: 6px;
+  border-radius: 7px;
   background: var(--surface3);
   border: 1px solid var(--border);
   display: flex; align-items: center; justify-content: center;
   font-size: 11px; font-weight: 700; color: var(--text);
   transition: all 0.2s;
 }
-.journey-week-dot.done { background: var(--accent); border-color: var(--accent); color: #fff; }
-.journey-week-dot.current { border-color: var(--accent); color: var(--accent); }
-.journey-week-dot.locked { opacity: 0.4; }
+.journey-week-dot.done { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: 0 2px 8px rgba(249,115,22,0.4); }
+.journey-week-dot.current { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 8px rgba(249,115,22,0.3); }
+.journey-week-dot.locked { opacity: 0.3; }
 
 /* XP */
-.xp-card { margin-bottom: 12px; }
+.xp-card { margin-bottom: 12px; background: linear-gradient(135deg, #0f0820, #0f0f1e); border-color: rgba(124,58,237,0.3); }
 .xp-row { display: flex; align-items: center; gap: 14px; }
-.xp-avatar { font-size: 32px; flex-shrink: 0; }
+.xp-avatar { font-size: 34px; flex-shrink: 0; animation: float 3s ease-in-out infinite; }
 .xp-info { flex: 1; min-width: 0; }
 .xp-level-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-.xp-level { font-size: 15px; font-weight: 800; color: var(--text-h); }
+.xp-level { font-size: 16px; font-weight: 800; color: var(--text-h); }
 .xp-title-badge {
   font-size: 11px; font-weight: 700;
-  background: var(--purple); color: #fff;
-  padding: 2px 8px; border-radius: 99px;
+  background: linear-gradient(135deg, var(--purple), var(--purple2));
+  color: #fff;
+  padding: 2px 10px; border-radius: 99px;
+  box-shadow: 0 2px 8px rgba(124,58,237,0.4);
 }
 .xp-sub { font-size: 11px; color: var(--text); margin-top: 4px; }
 
@@ -353,43 +364,62 @@ const tip = computed(() => tips[new Date().getDate() % tips.length])
 .today-card {
   margin-bottom: 20px;
   border-left: 3px solid var(--accent);
+  position: relative; overflow: hidden;
+}
+.today-card::after {
+  content: '';
+  position: absolute;
+  bottom: -20px; right: -20px;
+  width: 80px; height: 80px;
+  background: radial-gradient(circle, rgba(249,115,22,0.08) 0%, transparent 70%);
+  pointer-events: none;
 }
 .today-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
-.today-day { font-size: 10px; font-weight: 700; letter-spacing: 1px; margin-bottom: 4px; }
-.today-title { font-size: 16px; font-weight: 800; color: var(--text-h); }
+.today-day { font-size: 10px; font-weight: 700; letter-spacing: 1.5px; margin-bottom: 4px; text-transform: uppercase; }
+.today-title { font-size: 17px; font-weight: 800; color: var(--text-h); }
 .today-loc { font-size: 12px; color: var(--text); margin-top: 2px; }
 .today-icon-wrap {
-  width: 48px; height: 48px; border-radius: 12px;
+  width: 50px; height: 50px; border-radius: 14px;
   display: flex; align-items: center; justify-content: center;
-  font-size: 22px; flex-shrink: 0;
+  font-size: 24px; flex-shrink: 0;
 }
-.today-exercises { display: flex; flex-direction: column; gap: 3px; margin-bottom: 12px; }
-.today-ex { font-size: 13px; color: var(--text2); }
-.today-ex-more { font-size: 12px; color: var(--text); font-style: italic; }
+.today-exercises { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+.today-ex { font-size: 13px; color: var(--text2); display: flex; align-items: center; gap: 6px; }
+.today-ex::before { content: '▸'; color: var(--accent); font-size: 10px; }
+.today-ex-more { font-size: 12px; color: var(--text); font-style: italic; margin-top: 2px; }
 .today-rest { font-size: 13px; color: var(--text); font-style: italic; margin-bottom: 12px; }
 .today-btn {
   color: #fff; border-radius: var(--radius-sm);
-  padding: 10px 16px; font-size: 13px; font-weight: 700;
-  width: 100%; transition: opacity 0.2s;
+  padding: 12px 16px; font-size: 13px; font-weight: 700;
+  width: 100%; transition: all 0.2s;
+  position: relative; overflow: hidden;
 }
-.today-btn:hover { opacity: 0.85; }
+.today-btn::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.12), transparent);
+  pointer-events: none;
+}
+.today-btn:hover { opacity: 0.88; transform: translateY(-1px); }
 
 /* Missions */
 .missions-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
 .mission-item {
   display: flex; align-items: center; gap: 12px;
-  padding: 12px 14px; cursor: pointer;
+  padding: 13px 14px; cursor: pointer;
   transition: all 0.2s;
+  border-left: 2px solid transparent;
 }
-.mission-item.done { opacity: 0.6; }
+.mission-item:hover { border-left-color: var(--accent); background: var(--surface2); }
+.mission-item.done { opacity: 0.55; }
 .mission-check {
-  width: 22px; height: 22px; border-radius: 50%;
+  width: 24px; height: 24px; border-radius: 50%;
   border: 2px solid var(--border2);
   display: flex; align-items: center; justify-content: center;
   font-size: 11px; font-weight: 700; flex-shrink: 0;
   transition: all 0.2s;
 }
-.mission-check.done { background: var(--green); border-color: var(--green); color: #fff; }
+.mission-check.done { background: var(--green); border-color: var(--green); color: #fff; box-shadow: 0 2px 8px rgba(34,197,94,0.4); }
 .mission-info { flex: 1; }
 .mission-name { font-size: 14px; font-weight: 600; color: var(--text-h); }
 .mission-xp { font-size: 11px; color: var(--accent); font-weight: 700; margin-top: 1px; }
@@ -400,19 +430,28 @@ const tip = computed(() => tips[new Date().getDate() % tips.length])
 .ring-days { display: flex; justify-content: space-between; }
 .ring-day { display: flex; flex-direction: column; align-items: center; gap: 5px; flex: 1; }
 .ring-circle {
-  width: 36px; height: 36px; border-radius: 50%;
+  width: 38px; height: 38px; border-radius: 50%;
   border: 2px solid var(--border);
   display: flex; align-items: center; justify-content: center;
   font-size: 11px; font-weight: 700; color: var(--text);
-  transition: all 0.2s;
+  transition: all 0.25s;
 }
-.ring-circle.done { color: #fff; }
-.ring-circle.today:not(.done) { color: var(--text-h); }
+.ring-circle.done { color: #fff; box-shadow: 0 2px 10px rgba(0,0,0,0.4); }
+.ring-circle.today:not(.done) { color: var(--text-h); box-shadow: 0 0 0 2px var(--accent-dim); }
 .ring-label { font-size: 10px; color: var(--text); }
 
 /* Tip */
-.tip-card { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 12px; }
-.tip-icon { font-size: 20px; flex-shrink: 0; }
-.tip-title { font-size: 13px; font-weight: 700; color: var(--text-h); margin-bottom: 3px; }
-.tip-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+.tip-card {
+  display: flex; gap: 12px; align-items: flex-start; margin-bottom: 12px;
+  background: linear-gradient(135deg, rgba(249,115,22,0.05), var(--surface));
+  border-color: rgba(249,115,22,0.2);
+}
+.tip-icon { font-size: 22px; flex-shrink: 0; }
+.tip-title { font-size: 13px; font-weight: 700; color: var(--accent); margin-bottom: 3px; }
+.tip-text { font-size: 13px; color: var(--text2); line-height: 1.5; }
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-5px); }
+}
 </style>

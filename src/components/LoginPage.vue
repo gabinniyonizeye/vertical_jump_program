@@ -2,9 +2,15 @@
   <div class="auth-root">
     <!-- Hero -->
     <div class="auth-hero">
+      <div class="auth-hero-lines"></div>
       <img src="/NYIRABYOFinal-01.png" class="hero-logo" alt="NYIRABYO Basketball" />
       <div class="hero-brand">NYIRABYO <span>Basketball</span></div>
       <div class="hero-tagline">Your basketball journey starts here.</div>
+      <div class="hero-stats">
+        <div class="hero-stat"><div class="hero-stat-val">7</div><div class="hero-stat-label">Days/Week</div></div>
+        <div class="hero-stat"><div class="hero-stat-val">4</div><div class="hero-stat-label">Months</div></div>
+        <div class="hero-stat"><div class="hero-stat-val">1</div><div class="hero-stat-label">Goal</div></div>
+      </div>
     </div>
 
     <div class="auth-body">
@@ -133,48 +139,84 @@ async function doSignup() {
 }
 
 .auth-hero {
-  background: linear-gradient(160deg, #1a0a00 0%, #0d0d18 60%);
-  padding: 48px 24px 36px;
+  background: linear-gradient(160deg, #1f0800 0%, #120010 40%, #06060f 100%);
+  padding: 52px 24px 40px;
   text-align: center;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid rgba(249,115,22,0.15);
   position: relative;
   overflow: hidden;
 }
-
 .auth-hero::before {
   content: '';
   position: absolute;
-  top: -60px; right: -60px;
-  width: 200px; height: 200px;
-  background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+  top: -80px; left: 50%; transform: translateX(-50%);
+  width: 360px; height: 360px;
+  background: radial-gradient(circle, rgba(249,115,22,0.18) 0%, transparent 65%);
   pointer-events: none;
+}
+.auth-hero::after {
+  content: '';
+  position: absolute;
+  bottom: -40px; right: -40px;
+  width: 180px; height: 180px;
+  background: radial-gradient(circle, rgba(124,58,237,0.12) 0%, transparent 65%);
+  pointer-events: none;
+}
+/* Court lines decoration */
+.auth-hero-lines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.04;
+  background-image:
+    linear-gradient(0deg, transparent 49%, rgba(255,255,255,0.8) 49%, rgba(255,255,255,0.8) 51%, transparent 51%),
+    linear-gradient(90deg, transparent 49%, rgba(255,255,255,0.8) 49%, rgba(255,255,255,0.8) 51%, transparent 51%);
+  background-size: 60px 60px;
 }
 
 .hero-logo {
-  width: 140px;
+  width: 120px;
   object-fit: contain;
-  margin-bottom: 10px;
-  animation: fadeUp 0.5s ease both;
+  margin-bottom: 14px;
+  animation: splashPop 0.7s cubic-bezier(0.34,1.56,0.64,1) both;
+  filter: drop-shadow(0 0 20px rgba(249,115,22,0.5));
+  position: relative; z-index: 1;
 }
-
 .hero-brand {
-  font-size: 22px;
+  font-family: var(--font-display);
+  font-size: 28px;
   font-weight: 900;
   color: var(--text-h);
-  letter-spacing: -0.4px;
-  margin-bottom: 6px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  position: relative; z-index: 1;
 }
 .hero-brand span { color: var(--accent); }
-
 .hero-tagline {
-  font-size: 14px;
+  font-size: 13px;
   color: var(--text);
   font-weight: 500;
+  position: relative; z-index: 1;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
 }
+.hero-tagline::before, .hero-tagline::after {
+  content: '';
+  width: 20px; height: 1px;
+  background: var(--border2);
+}
+.hero-stats {
+  display: flex; justify-content: center; gap: 24px;
+  margin-top: 20px;
+  position: relative; z-index: 1;
+}
+.hero-stat { text-align: center; }
+.hero-stat-val { font-size: 20px; font-weight: 900; color: var(--accent); }
+.hero-stat-label { font-size: 10px; color: var(--text); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
 
 .auth-body {
   flex: 1;
-  padding: 24px 20px 40px;
+  padding: 24px 20px 48px;
   max-width: 440px;
   width: 100%;
   margin: 0 auto;
@@ -183,23 +225,24 @@ async function doSignup() {
 .auth-tabs {
   display: flex;
   background: var(--surface2);
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 4px;
   margin-bottom: 24px;
   gap: 4px;
+  border: 1px solid var(--border);
 }
 .auth-tabs button {
   flex: 1;
-  padding: 10px;
-  border-radius: 7px;
+  padding: 11px;
+  border-radius: 9px;
   font-size: 14px;
   font-weight: 700;
   background: transparent;
   color: var(--text);
-  transition: all 0.2s;
+  transition: all 0.25s;
 }
 .auth-tabs button.active {
-  background: var(--accent);
+  background: linear-gradient(135deg, var(--accent), #ea6a0a);
   color: #fff;
   box-shadow: var(--shadow-accent);
 }
@@ -207,15 +250,15 @@ async function doSignup() {
 .auth-form { display: flex; flex-direction: column; gap: 14px; }
 
 .auth-err {
-  background: #ef444422;
+  background: rgba(239,68,68,0.1);
   border: 1px solid var(--red);
   color: #fca5a5;
   border-radius: var(--radius-sm);
-  padding: 10px 14px;
+  padding: 11px 14px;
   font-size: 13px;
   font-weight: 500;
+  display: flex; align-items: center; gap: 8px;
 }
-
 .auth-note {
   font-size: 12px;
   color: var(--text);
@@ -225,29 +268,31 @@ async function doSignup() {
 
 /* Payment */
 .payment-box {
-  background: linear-gradient(135deg, #1a0e00, #12121e);
-  border: 1.5px solid var(--accent);
+  background: linear-gradient(135deg, rgba(249,115,22,0.06), rgba(15,15,30,0.8));
+  border: 1.5px solid rgba(249,115,22,0.4);
   border-radius: var(--radius);
-  padding: 16px;
+  padding: 18px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
+  box-shadow: 0 0 24px rgba(249,115,22,0.08);
 }
 .pay-header { display: flex; align-items: center; gap: 12px; }
-.pay-icon { font-size: 24px; }
+.pay-icon { font-size: 26px; }
 .pay-title { font-weight: 700; color: var(--accent); font-size: 14px; }
 .pay-sub { font-size: 12px; color: var(--text); }
 .pay-code {
   font-family: 'Courier New', monospace;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
   color: var(--text-h);
   background: var(--surface3);
   border-radius: var(--radius-sm);
-  padding: 12px;
+  padding: 14px;
   text-align: center;
   letter-spacing: 2px;
   border: 1px solid var(--border2);
+  box-shadow: inset 0 2px 8px rgba(0,0,0,0.3);
 }
 .pay-desc { font-size: 13px; color: var(--text); line-height: 1.5; }
 .pay-check-label {
@@ -258,7 +303,13 @@ async function doSignup() {
   color: var(--text-h);
   font-weight: 600;
   cursor: pointer;
+  padding: 10px;
+  background: var(--surface3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  transition: border-color 0.2s;
 }
+.pay-check-label:hover { border-color: var(--accent); }
 .pay-checkbox { width: auto; cursor: pointer; accent-color: var(--accent); }
 
 /* Done */
@@ -266,27 +317,21 @@ async function doSignup() {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 14px;
-  padding: 20px 0;
+  gap: 16px;
+  padding: 24px 0;
   text-align: center;
 }
 .done-logo {
-  width: 120px;
+  width: 110px;
   object-fit: contain;
-  animation: fadeUp 0.5s ease both;
+  animation: splashPop 0.7s cubic-bezier(0.34,1.56,0.64,1) both;
+  filter: drop-shadow(0 0 16px rgba(249,115,22,0.4));
 }
-.done-title { font-size: 22px; font-weight: 800; color: var(--text-h); }
+.done-title { font-size: 24px; font-weight: 800; color: var(--text-h); }
 .done-desc { font-size: 14px; color: var(--text); line-height: 1.6; max-width: 320px; }
-.wa-btn {
-  background: #16a34a;
-  color: #fff;
-  font-weight: 700;
-  font-size: 14px;
-  padding: 12px 24px;
-  border-radius: var(--radius-sm);
-  text-decoration: none;
-  width: 100%;
-  text-align: center;
-  display: block;
+
+@keyframes splashPop {
+  from { opacity: 0; transform: scale(0.6) translateY(20px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
 }
 </style>
