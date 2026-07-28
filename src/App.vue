@@ -154,13 +154,33 @@
 
     <!-- Bottom Nav (mobile only) -->
     <nav class="bottom-nav">
-      <button v-for="n in navItems" :key="n.id"
-        class="nav-item" :class="{ active: tab === n.id }"
-        @click="tab = n.id">
+      <button v-for="n in bottomNavItems" :key="n.id"
+        class="nav-item" :class="{ active: n.id === 'more' ? moreOpen || isMoreTab : tab === n.id }"
+        @click="n.id === 'more' ? moreOpen = !moreOpen : (tab = n.id, moreOpen = false)">
         <span class="nav-icon">{{ n.icon }}</span>
         <span>{{ n.label }}</span>
       </button>
     </nav>
+
+    <!-- More Drawer (mobile only) -->
+    <Transition name="drawer">
+      <div v-if="moreOpen" class="more-overlay" @click.self="moreOpen = false">
+        <div class="more-drawer">
+          <div class="more-drawer-handle"></div>
+          <div v-for="group in moreGroups" :key="group.label">
+            <div class="more-group-label">{{ group.label }}</div>
+            <div class="more-grid">
+              <button v-for="n in group.items" :key="n.id"
+                class="more-item" :class="{ active: tab === n.id }"
+                @click="tab = n.id; moreOpen = false">
+                <span class="more-icon">{{ n.icon }}</span>
+                <span>{{ n.label }}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Transition>
   </div>
 </template>
 
@@ -194,6 +214,7 @@ const loading = ref(true)
 const user = ref(null)
 const userProfile = ref(null)
 const tab = ref('home')
+const moreOpen = ref(false)
 
 let unsubscribe = null
 
@@ -246,6 +267,41 @@ const navItems = [
   { id: 'nutrition',   icon: '🥗', label: 'Nutrition' },
   { id: 'profile',     icon: '👤', label: 'Profile' },
 ]
+
+const bottomNavItems = [
+  { id: 'home',     icon: '🏠', label: 'Home' },
+  { id: 'daily',    icon: '📋', label: 'Daily' },
+  { id: 'train',    icon: '🏀', label: 'Train' },
+  { id: 'progress', icon: '📈', label: 'Progress' },
+  { id: 'more',     icon: '☰',  label: 'More' },
+]
+
+const moreGroups = [
+  { label: 'Training', items: [
+    { id: 'mobility',    icon: '🧘', label: 'Mobility' },
+    { id: 'lower',       icon: '🦵', label: 'Lower Body' },
+    { id: 'upper',       icon: '💪', label: 'Upper Body' },
+    { id: 'explosive',   icon: '⚡', label: 'Explosive' },
+    { id: 'speed',       icon: '🏃', label: 'Speed' },
+    { id: 'schedule',    icon: '📅', label: 'Schedule' },
+  ]},
+  { label: 'Skills', items: [
+    { id: 'ballhandling', icon: '🏀', label: 'Ball Handling' },
+    { id: 'shooting',     icon: '🎯', label: 'Shooting' },
+    { id: 'finishing',    icon: '🔥', label: 'Finishing' },
+    { id: 'iq',           icon: '🧠', label: 'IQ' },
+  ]},
+  { label: 'More', items: [
+    { id: 'recovery',   icon: '🧊', label: 'Recovery' },
+    { id: 'nutrition',  icon: '🥗', label: 'Nutrition' },
+    { id: 'tools',      icon: '🔧', label: 'Tools' },
+    { id: 'community',  icon: '👥', label: 'Community' },
+    { id: 'profile',    icon: '👤', label: 'Profile' },
+  ]},
+]
+
+const moreTabIds = moreGroups.flatMap(g => g.items.map(i => i.id))
+const isMoreTab = computed(() => moreTabIds.includes(tab.value))
 
 const navGroups = {
   overview: [
