@@ -99,21 +99,32 @@ const dayName = computed(() => {
 })
 
 const todayKey = new Date().toISOString().slice(0, 10)
+// tab override per day per task (null = use default routeByTask)
+const tabOverride = {
+  Monday:    { workout: 'lower',       mobility: 'mobility' },
+  Tuesday:   { workout: 'speed',       mobility: 'mobility' },
+  Wednesday: { workout: 'upper',       mobility: 'mobility' },
+  Thursday:  { workout: 'explosive',   mobility: 'mobility' },
+  Friday:    { workout: 'train',       mobility: 'mobility' },
+  Saturday:  { workout: 'explosive',   mobility: 'mobility' },
+  Sunday:    { workout: 'recovery',    mobility: 'mobility' },
+}
 const routeByTask = { mobility: 'mobility', workout: 'train', handling: 'ballhandling', shooting: 'shooting', iq: 'iq', recovery: 'recovery', water: 'nutrition', sleep: 'recovery' }
 const dayPlan = {
-  Monday: { workout: ['Lower Body Strength', 'Squat, RDL, split squats, calves and core', '60 min'], handling: ['Ball Handling + 100 Layups', 'Pound, cross, between, behind and combo moves', '45 min'] },
-  Tuesday: { workout: ['Speed & Plyometrics', '10m/20m sprints, slides, closeouts and jumps', '60 min'], shooting: ['Shooting Workout', '50 form, 100 catch-and-shoot, 50 pull-ups, 50 free throws', '50 min'] },
-  Wednesday: { workout: ['Upper Body Strength', 'Bench, pull-ups, overhead press, rows, dips and carries', '60 min'], iq: ['Finishing + Film', 'Floaters, reverse, euro, contact finishes and 20 min film', '45 min'] },
-  Thursday: { handling: ['Skill Day: Ball Handling', '45 minutes of purposeful handles and footwork', '45 min'], shooting: ['Skill Day: Shooting', '45 minutes of game-speed shooting work', '45 min'], iq: ['Read the Game', 'Use 1v1, 2v2 or 3v3 to read defenders', '30 min'] },
-  Friday: { workout: ['Competition Day', 'Compete in 1v1, 3v3 or 5v5. Defend and communicate.', '60 min'], recovery: ['Post-Game Recovery', 'Stretch, hydrate, and note what you learned', '20 min'] },
-  Saturday: { workout: ['Power Day', 'Deadlift, hip thrust, walking lunge, box jumps and core', '60 min'], handling: ['Transition Court Work', 'Fast-break finishing, transition shooting and ball handling', '45 min'] },
-  Sunday: { workout: ['Active Recovery', '30-minute walk, mobility, foam roll and early sleep', '60 min'], iq: ['Basketball Film', 'Study spacing, reads and defensive decisions', '20 min'] },
+  Monday:    { mobility: ['Warmup: Hip & Ankle Mobility', 'Hip circles, ankle rolls, leg swings, dynamic lunges', '15 min'], workout: ['Lower Body Strength', 'Squat, RDL, split squats, calves and core', '60 min'], handling: ['Ball Handling + 100 Layups', 'Pound, cross, between, behind and combo moves', '45 min'] },
+  Tuesday:   { mobility: ['Warmup: Dynamic Stretch', 'High knees, butt kicks, leg swings, hip openers', '10 min'], workout: ['Speed & Plyometrics', '10m/20m sprints, slides, closeouts and jumps', '60 min'], shooting: ['Shooting Workout', '50 form, 100 catch-and-shoot, 50 pull-ups, 50 free throws', '50 min'] },
+  Wednesday: { mobility: ['Warmup: Shoulder & Spine', 'Arm circles, thoracic rotation, band pull-aparts', '15 min'], workout: ['Upper Body Strength', 'Bench, pull-ups, overhead press, rows, dips and carries', '60 min'], iq: ['Finishing + Film', 'Floaters, reverse, euro, contact finishes and 20 min film', '45 min'] },
+  Thursday:  { mobility: ['Warmup: Full Body Activation', 'World greatest stretch, 90/90, deep squat hold', '15 min'], handling: ['Skill Day: Ball Handling', '45 minutes of purposeful handles and footwork', '45 min'], shooting: ['Skill Day: Shooting', '45 minutes of game-speed shooting work', '45 min'], iq: ['Read the Game', 'Use 1v1, 2v2 or 3v3 to read defenders', '30 min'] },
+  Friday:    { mobility: ['Warmup: Game Prep', 'Dynamic stretch, sprint drills, jump activations', '10 min'], workout: ['Competition Day', 'Compete in 1v1, 3v3 or 5v5. Defend and communicate.', '60 min'], recovery: ['Post-Game Recovery', 'Stretch, hydrate, and note what you learned', '20 min'] },
+  Saturday:  { mobility: ['Warmup: Power Activation', 'Glute bridges, band walks, jump rope, hip flexor stretch', '15 min'], workout: ['Power Day', 'Deadlift, hip thrust, walking lunge, box jumps and core', '60 min'], handling: ['Transition Court Work', 'Fast-break finishing, transition shooting and ball handling', '45 min'] },
+  Sunday:    { mobility: ['Full Body Mobility Session', 'Foam roll, pigeon, couch stretch, frog, cat-cow', '30 min'], workout: ['Active Recovery Walk', '30-minute easy walk or light jog outdoors', '30 min'], iq: ['Basketball Film', 'Study spacing, reads and defensive decisions', '20 min'] },
 }
 
 onMounted(async () => {
   const plan = dayPlan[dayName.value] || {}
+  const tabs = tabOverride[dayName.value] || {}
   tasks.value.forEach(task => {
-    task.tab = routeByTask[task.id]
+    task.tab = tabs[task.id] || routeByTask[task.id]
     if (plan[task.id]) [task.name, task.description, task.time] = plan[task.id]
   })
   try {
