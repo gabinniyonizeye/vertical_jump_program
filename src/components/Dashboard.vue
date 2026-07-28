@@ -142,20 +142,25 @@ import { loadUserData, saveUserData } from '../useAuth.js'
 const props = defineProps({ uid: String, profile: Object })
 defineEmits(['go'])
 
-const perfEntries = ref([])
-const trackerData = ref([])
-const ciHistory = ref([])
+const progressEntries = ref([])
+const dailyCompletions = ref({}) // { 'YYYY-MM-DD': true }
 const completedMissions = ref([])
 
 onMounted(async () => {
-  const perf = await loadUserData(props.uid, 'performance')
-  if (perf?.entries) perfEntries.value = perf.entries
+  // Load progress entries (same key as ProgressPage)
+  const prog = await loadUserData(props.uid, 'progress_entries')
+  if (Array.isArray(prog?.entries)) progressEntries.value = prog.entries
 
-  const tracker = await loadUserData(props.uid, 'tracker')
-  if (tracker?.rows) trackerData.value = tracker.rows
-
-  const ci = await loadUserData(props.uid, 'checkin')
-  if (ci?.ciHistory) ciHistory.value = ci.ciHistory
+  // Load daily completions for this week
+  const today = new Date()
+  const dow = (today.getDay() + 6) % 7
+  for (let i = 0; i <= dow; i++) {
+    const d = new Date(today)
+    d.setDate(today.getDate() - dow + i)
+    const dateStr = d.toISOString().slice(0, 10)
+    const daily = await loadUserData(props.uid, `daily_plan_${dateStr}`)
+    if (daily?.completed?.length) dailyCompletions.value[dateStr] = true
+  }
 
   const ms = await loadUserData(props.uid, 'missions')
   if (ms?.completed) completedMissions.value = ms.completed
@@ -192,8 +197,13 @@ const journeyWeeks = computed(() => {
   }))
 })
 
-// XP & Level
-const xp = computed(() => completedMissions.value.length * 50 + weekDone.value * 100)
+// XP & Level — based on real activity
+const xp = computed(() => {
+  const missionXP = completedMissions.value.length * 50
+  const sessionXP = Object.keys(dailyCompletions.value).length * 100
+  const progressXP = progressEntries.value.length * 25
+  return missionXP + sessionXP + progressXP
+})
 const playerLevel = computed(() => Math.floor(xp.value / 500) + 1)
 const xpNeeded = computed(() => playerLevel.value * 500)
 const xpPercent = computed(() => Math.min(100, ((xp.value % 500) / 500) * 100))
@@ -226,33 +236,40 @@ const dayMap = {
 
 const today = computed(() => dayMap[todayName.value] || dayMap['Sunday'])
 
-// Weekly ring
+// Weekly ring — driven by daily plan completions
 const weekDays = computed(() => {
   const order = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']
-  return order.map(name => ({
-    name, short: name[0], color: dayMap[name].color,
-    done: trackerData.value?.find(r => r.day === name)?.done || false,
-  }))
+  const today = new Date()
+  const dow = (today.getDay() + 6) % 7
+  return order.map((name, i) => {
+    const d = new Date(today)
+    d.setDate(today.getDate() - dow + i)
+    const dateStr = d.toISOString().slice(0, 10)
+    return {
+      name, short: name[0], color: dayMap[name].color,
+      done: !!dailyCompletions.value[dateStr],
+    }
+  })
 })
 const weekDone = computed(() => weekDays.value.filter(d => d.done).length)
 
-// Streak
+// Streak — consecutive days with daily plan activity
 const streak = computed(() => {
   let s = 0
   const now = new Date()
   for (let i = 0; i <= 365; i++) {
     const d = new Date(now); d.setDate(d.getDate() - i)
     const ds = d.toISOString().slice(0, 10)
-    if (ciHistory.value.find(e => e.date === ds)?.done) s++
+    if (dailyCompletions.value[ds]) s++
     else if (i > 0) break
   }
   return s
 })
 
-const totalSessions = computed(() => weekDone.value)
+const totalSessions = computed(() => Object.keys(dailyCompletions.value).length)
 const latestVert = computed(() => {
-  const filled = perfEntries.value.filter(v => v !== '' && Number(v) > 0)
-  return filled.length ? filled[filled.length - 1] : null
+  const verts = progressEntries.value.filter(e => e.vertical != null)
+  return verts.length ? verts[verts.length - 1].vertical : null
 })
 
 // Daily missions

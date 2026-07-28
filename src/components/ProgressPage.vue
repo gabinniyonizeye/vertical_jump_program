@@ -163,10 +163,38 @@ onMounted(async () => {
   if (!props.uid) return
   try {
     const data = await loadUserData(props.uid, 'progress_entries')
-    if (Array.isArray(data?.entries)) entries.value = data.entries
+    // handle both old format (no id) and new format (with id)
+    if (Array.isArray(data?.entries)) {
+      entries.value = data.entries.map((e, i) => ({
+        ...e,
+        id: e.id ?? `legacy_${e.date}_${i}`,
+      }))
+    }
+    // also try loading from old ProgressTracker key if no entries yet
+    if (!entries.value.length) {
+      const old = await loadUserData(props.uid, 'progress')
+      if (Array.isArray(old?.entries)) {
+        entries.value = old.entries.map((e, i) => ({
+          ...e,
+          id: e.id ?? `legacy_${e.date}_${i}`,
+        }))
+      }
+    }
   } catch (error) {
     saveError.value = 'Your saved progress could not be loaded. Please try again.'
   }
+  // load daily completions for weekly dots
+  try {
+    const today = new Date()
+    const dow = (today.getDay() + 6) % 7
+    for (let i = 0; i <= dow; i++) {
+      const d = new Date(today)
+      d.setDate(today.getDate() - dow + i)
+      const dateStr = d.toISOString().slice(0, 10)
+      const daily = await loadUserData(props.uid, `daily_plan_${dateStr}`)
+      if (daily?.completed?.length) dailyDates.value.add(dateStr)
+    }
+  } catch (_) {}
 })
 
 const hasAnyValue = computed(() => fields.some(f => newEntry.value[f.key] != null && newEntry.value[f.key] !== ''))
@@ -271,16 +299,20 @@ function areaPath(key) {
   return `${line} L${pts[pts.length - 1].x},${SH} L${pts[0].x},${SH} Z`
 }
 
-// Weekly completion
+const dailyDates = ref(new Set())
+
+// Weekly completion — green if either a progress entry OR daily tasks were done that day
 const weekDays = computed(() => {
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
   const today = new Date()
-  const dow = (today.getDay() + 6) % 7 // Mon=0
+  const dow = (today.getDay() + 6) % 7
   return days.map((label, i) => {
     const d = new Date(today)
     d.setDate(today.getDate() - dow + i)
     const dateStr = d.toISOString().slice(0, 10)
-    return { label, logged: entries.value.some(e => e.date === dateStr) }
+    const hasProgress = entries.value.some(e => e.date === dateStr)
+    const hasDaily = dailyDates.value.has(dateStr)
+    return { label, logged: hasProgress || hasDaily }
   })
 })
 
