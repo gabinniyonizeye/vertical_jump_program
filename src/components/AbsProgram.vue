@@ -76,6 +76,22 @@
                 </div>
                 <TimerWidget v-if="ex.seconds" :seconds="ex.seconds" />
                 <div class="form-cue">💡 {{ ex.cue }}</div>
+                <div class="inline-rest" :class="{ running: getRestTimer(day.name+'-'+i).running, finished: getRestTimer(day.name+'-'+i).done }">
+                  <div class="irt-top">
+                    <span class="irt-label">{{ getRestTimer(day.name+'-'+i).done ? '✅ Rest Done!' : getRestTimer(day.name+'-'+i).running ? '⏱ Resting...' : '⏸ Rest Timer' }}</span>
+                    <span class="irt-time">{{ timerDisplay(getRestTimer(day.name+'-'+i)) }}</span>
+                  </div>
+                  <div class="irt-bar"><div class="irt-fill" :style="{ width: restProgress(getRestTimer(day.name+'-'+i)) + '%', background: getRestTimer(day.name+'-'+i).done ? '#22c55e' : getRestTimer(day.name+'-'+i).running ? '#f97316' : '#6366f1' }"></div></div>
+                  <div class="irt-btns">
+                    <button v-if="!getRestTimer(day.name+'-'+i).running && !getRestTimer(day.name+'-'+i).done" @click.stop="startRest(day.name+'-'+i, 60)">▶ Start</button>
+                    <button v-if="getRestTimer(day.name+'-'+i).running" @click.stop="pauseRest(day.name+'-'+i)">⏸ Pause</button>
+                    <button @click.stop="resetRest(day.name+'-'+i, 60)">↺</button>
+                    <button @click.stop="setRest(day.name+'-'+i, 20)">20s</button>
+                    <button @click.stop="setRest(day.name+'-'+i, 30)">30s</button>
+                    <button @click.stop="setRest(day.name+'-'+i, 40)">40s</button>
+                    <button @click.stop="setRest(day.name+'-'+i, 60)">60s</button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -99,6 +115,22 @@
                 </div>
                 <TimerWidget v-if="day.finisher.seconds" :seconds="day.finisher.seconds" />
                 <div class="form-cue">💡 {{ day.finisher.cue }}</div>
+                <div class="inline-rest" :class="{ running: getRestTimer(day.name+'-finisher').running, finished: getRestTimer(day.name+'-finisher').done }">
+                  <div class="irt-top">
+                    <span class="irt-label">{{ getRestTimer(day.name+'-finisher').done ? '✅ Rest Done!' : getRestTimer(day.name+'-finisher').running ? '⏱ Resting...' : '⏸ Rest Timer' }}</span>
+                    <span class="irt-time">{{ timerDisplay(getRestTimer(day.name+'-finisher')) }}</span>
+                  </div>
+                  <div class="irt-bar"><div class="irt-fill" :style="{ width: restProgress(getRestTimer(day.name+'-finisher')) + '%', background: getRestTimer(day.name+'-finisher').done ? '#22c55e' : getRestTimer(day.name+'-finisher').running ? '#f97316' : '#6366f1' }"></div></div>
+                  <div class="irt-btns">
+                    <button v-if="!getRestTimer(day.name+'-finisher').running && !getRestTimer(day.name+'-finisher').done" @click.stop="startRest(day.name+'-finisher', 60)">▶ Start</button>
+                    <button v-if="getRestTimer(day.name+'-finisher').running" @click.stop="pauseRest(day.name+'-finisher')">⏸ Pause</button>
+                    <button @click.stop="resetRest(day.name+'-finisher', 60)">↺</button>
+                    <button @click.stop="setRest(day.name+'-finisher', 20)">20s</button>
+                    <button @click.stop="setRest(day.name+'-finisher', 30)">30s</button>
+                    <button @click.stop="setRest(day.name+'-finisher', 40)">40s</button>
+                    <button @click.stop="setRest(day.name+'-finisher', 60)">60s</button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -192,9 +224,48 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, watch, onMounted } from 'vue'
+import { ref, reactive, computed, watch, onMounted, onUnmounted } from 'vue'
 import { loadUserData, saveUserData } from '../useAuth.js'
 import TimerWidget from './TimerWidget.vue'
+
+// ── Rest Timer helpers ──
+const restTimers = ref({})
+function getRestTimer(key) {
+  if (!restTimers.value[key]) restTimers.value[key] = { remaining: 60, total: 60, running: false, done: false, _iv: null }
+  return restTimers.value[key]
+}
+function startRest(key, sec = 60) {
+  const t = getRestTimer(key)
+  if (t.running) return
+  if (t.done || t.remaining === 0) { t.remaining = sec; t.total = sec; t.done = false }
+  t.running = true
+  t._iv = setInterval(() => {
+    if (t.remaining <= 1) { t.remaining = 0; t.running = false; t.done = true; clearInterval(t._iv); pingSound() }
+    else t.remaining--
+  }, 1000)
+}
+function pauseRest(key) { const t = getRestTimer(key); clearInterval(t._iv); t.running = false }
+function resetRest(key, sec = 60) {
+  const t = getRestTimer(key); clearInterval(t._iv)
+  t.running = false; t.done = false; t.remaining = sec; t.total = sec
+}
+function setRest(key, sec) { resetRest(key, sec); startRest(key, sec) }
+function timerDisplay(t) {
+  const m = Math.floor(t.remaining / 60), s = t.remaining % 60
+  return `${m}:${s.toString().padStart(2, '0')}`
+}
+function restProgress(t) { return t.total > 0 ? ((t.total - t.remaining) / t.total) * 100 : 0 }
+function pingSound() {
+  try {
+    const ctx = new AudioContext(), osc = ctx.createOscillator(), gain = ctx.createGain()
+    osc.connect(gain); gain.connect(ctx.destination)
+    osc.frequency.value = 880
+    gain.gain.setValueAtTime(0.3, ctx.currentTime)
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6)
+    osc.start(); osc.stop(ctx.currentTime + 0.6)
+  } catch {}
+}
+onUnmounted(() => { Object.values(restTimers.value).forEach(t => clearInterval(t._iv)) })
 
 const props = defineProps({ uid: String })
 
@@ -562,4 +633,16 @@ function toggleExpand(day, i) {
 }
 .ci-save-btn:hover { opacity: 0.85; }
 .ci-save-btn.saved { background: #22c55e; }
+
+.inline-rest { margin-top: 4px; padding: 8px 10px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); transition: border-color 0.3s; }
+.inline-rest.running { border-color: #f9731655; }
+.inline-rest.finished { border-color: #22c55e88; }
+.irt-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+.irt-label { font-size: 11px; font-weight: 700; color: var(--text-h); }
+.irt-time { font-size: 16px; font-weight: 800; color: var(--text-h); font-variant-numeric: tabular-nums; }
+.irt-bar { width: 100%; height: 4px; background: var(--surface2); border-radius: 99px; overflow: hidden; margin-bottom: 6px; }
+.irt-fill { height: 100%; border-radius: 99px; transition: width 0.9s linear, background 0.3s; }
+.irt-btns { display: flex; gap: 5px; flex-wrap: wrap; }
+.irt-btns button { padding: 4px 9px; border-radius: 7px; border: 1px solid var(--border); background: var(--surface2); color: var(--text); font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.15s; }
+.irt-btns button:hover { border-color: var(--accent); color: var(--accent); }
 </style>

@@ -62,16 +62,53 @@
             </div>
           </div>
           <div class="exercise-actions">
-            <button
-              class="complete-btn"
-              :class="{ completed: exercise.completed }"
-              @click.stop="toggleComplete(exercise.id)"
-              :title="exercise.completed ? 'Mark as incomplete' : 'Mark as complete'"
-            >
+            <button class="complete-btn" :class="{ completed: exercise.completed }" @click.stop="toggleComplete(exercise.id)" :title="exercise.completed ? 'Mark as incomplete' : 'Mark as complete'">
               {{ exercise.completed ? '✓' : '○' }}
             </button>
-            <div class="expand-icon" :class="{ expanded: expandedId === exercise.id }">
-              ▼
+            <div class="expand-icon" :class="{ expanded: expandedId === exercise.id }">▼</div>
+          </div>
+        </div>
+
+        <!-- Always-visible controls -->
+        <div class="ex-always" @click.stop>
+          <div class="rep-counter">
+            <template v-if="isTimeBased(exercise.reps)">
+              <div class="ex-timer" :class="{ running: getExTimer(exercise.id).running, done: getExTimer(exercise.id).done }">
+                <span class="et-time">{{ timerDisplay(getExTimer(exercise.id).total ? getExTimer(exercise.id) : { remaining: parseTargetSecs(exercise.reps) || 0, total: parseTargetSecs(exercise.reps) || 1 }) }}</span>
+                <button v-if="!getExTimer(exercise.id).running && !getExTimer(exercise.id).done" @click="startExTimer(exercise.id, parseTargetSecs(exercise.reps))">▶</button>
+                <button v-if="getExTimer(exercise.id).running" @click="pauseExTimer(exercise.id)">⏸</button>
+                <button @click="resetExTimer(exercise.id, parseTargetSecs(exercise.reps))">↺</button>
+                <span class="et-label">{{ getExTimer(exercise.id).done ? '✅ Done!' : getExTimer(exercise.id).running ? 'Going...' : 'Timer' }}</span>
+              </div>
+            </template>
+            <template v-else>
+              <button class="rep-tap" @click="tapRep(exercise.id)">
+                <span class="rep-num" :class="{ reached: parseTargetReps(exercise.reps) && getRepCount(exercise.id) >= parseTargetReps(exercise.reps) }">{{ getRepCount(exercise.id) }}</span>
+                <span class="rep-target" v-if="parseTargetReps(exercise.reps)"> / {{ parseTargetReps(exercise.reps) }}</span>
+              </button>
+              <button class="rep-reset" @click="resetReps(exercise.id)">↺</button>
+              <span class="rep-label">Reps</span>
+            </template>
+            <div class="set-counter">
+              <button class="set-btn" @click="addSet(exercise.id)">+Set</button>
+              <span class="set-done">{{ getSetState(exercise.id).done }}</span>
+              <button class="rep-reset" @click="resetSets(exercise.id)">↺</button>
+            </div>
+          </div>
+          <div class="inline-rest" :class="{ running: getRestTimer(exercise.id).running, finished: getRestTimer(exercise.id).done }">
+            <div class="irt-top">
+              <span class="irt-label">{{ getRestTimer(exercise.id).done ? '✅ Rest Done!' : getRestTimer(exercise.id).running ? '⏱ Resting...' : '⏸ Rest' }}</span>
+              <span class="irt-time">{{ timerDisplay(getRestTimer(exercise.id)) }}</span>
+            </div>
+            <div class="irt-bar"><div class="irt-fill" :style="{ width: restProgress(getRestTimer(exercise.id)) + '%', background: getRestTimer(exercise.id).done ? '#22c55e' : getRestTimer(exercise.id).running ? '#f97316' : '#6366f1' }"></div></div>
+            <div class="irt-btns">
+              <button v-if="!getRestTimer(exercise.id).running && !getRestTimer(exercise.id).done" @click="startRest(exercise.id, 60)">▶ Start</button>
+              <button v-if="getRestTimer(exercise.id).running" @click="pauseRest(exercise.id)">⏸ Pause</button>
+              <button @click="resetRest(exercise.id, 60)">↺</button>
+              <button @click="setRest(exercise.id, 30)">30s</button>
+              <button @click="setRest(exercise.id, 60)">60s</button>
+              <button @click="setRest(exercise.id, 90)">90s</button>
+              <button @click="setRest(exercise.id, 120)">2m</button>
             </div>
           </div>
         </div>
@@ -180,7 +217,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onUnmounted } from 'vue'
 
 const expandedId = ref(null)
 
@@ -368,6 +405,94 @@ function toggleSetComplete(exerciseId, setNum) {
   }
 }
 
+// ── Timer / Rep / Set helpers ──
+const repCounters = ref({})
+const setCounters = ref({})
+const restTimers = ref({})
+const exTimers = ref({})
+
+function isTimeBased(reps) { return /sec|min/i.test(reps || '') }
+function parseTargetSecs(reps) {
+  if (!isTimeBased(reps)) return null
+  const m = reps.match(/(\d+)/); return m ? parseInt(m[1]) : null
+}
+function parseTargetReps(reps) {
+  if (isTimeBased(reps)) return null
+  const m = reps.match(/(\d+)/); return m ? parseInt(m[1]) : null
+}
+function getRepCount(id) {
+  if (repCounters.value[id] === undefined) repCounters.value[id] = 0
+  return repCounters.value[id]
+}
+function tapRep(id) { repCounters.value[id] = (repCounters.value[id] || 0) + 1 }
+function resetReps(id) { repCounters.value[id] = 0 }
+function getSetState(id) {
+  if (!setCounters.value[id]) setCounters.value[id] = { done: 0 }
+  return setCounters.value[id]
+}
+function addSet(id) { getSetState(id).done++ }
+function resetSets(id) { setCounters.value[id] = { done: 0 } }
+
+function getExTimer(id) {
+  if (!exTimers.value[id]) exTimers.value[id] = { remaining: 0, total: 0, running: false, done: false, _iv: null }
+  return exTimers.value[id]
+}
+function startExTimer(id, sec) {
+  const t = getExTimer(id)
+  if (t.running) return
+  if (!t.total || t.done || t.remaining === 0) { t.remaining = sec; t.total = sec; t.done = false }
+  t.running = true
+  t._iv = setInterval(() => {
+    if (t.remaining <= 1) { t.remaining = 0; t.running = false; t.done = true; clearInterval(t._iv); pingSound() }
+    else t.remaining--
+  }, 1000)
+}
+function pauseExTimer(id) { const t = getExTimer(id); clearInterval(t._iv); t.running = false }
+function resetExTimer(id, sec) {
+  const t = getExTimer(id); clearInterval(t._iv)
+  t.running = false; t.done = false; t.remaining = sec; t.total = sec
+}
+
+function getRestTimer(id) {
+  if (!restTimers.value[id]) restTimers.value[id] = { remaining: 60, total: 60, running: false, done: false, _iv: null }
+  return restTimers.value[id]
+}
+function startRest(id, sec = 60) {
+  const t = getRestTimer(id)
+  if (t.running) return
+  if (t.done || t.remaining === 0) { t.remaining = sec; t.total = sec; t.done = false }
+  t.running = true
+  t._iv = setInterval(() => {
+    if (t.remaining <= 1) { t.remaining = 0; t.running = false; t.done = true; clearInterval(t._iv); pingSound() }
+    else t.remaining--
+  }, 1000)
+}
+function pauseRest(id) { const t = getRestTimer(id); clearInterval(t._iv); t.running = false }
+function resetRest(id, sec = 60) {
+  const t = getRestTimer(id); clearInterval(t._iv)
+  t.running = false; t.done = false; t.remaining = sec; t.total = sec
+}
+function setRest(id, sec) { resetRest(id, sec); startRest(id, sec) }
+function timerDisplay(t) {
+  const m = Math.floor(t.remaining / 60), s = t.remaining % 60
+  return `${m}:${s.toString().padStart(2, '0')}`
+}
+function restProgress(t) { return t.total > 0 ? ((t.total - t.remaining) / t.total) * 100 : 0 }
+function pingSound() {
+  try {
+    const ctx = new AudioContext(), osc = ctx.createOscillator(), gain = ctx.createGain()
+    osc.connect(gain); gain.connect(ctx.destination)
+    osc.frequency.value = 880
+    gain.gain.setValueAtTime(0.3, ctx.currentTime)
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6)
+    osc.start(); osc.stop(ctx.currentTime + 0.6)
+  } catch {}
+}
+onUnmounted(() => {
+  Object.values(restTimers.value).forEach(t => clearInterval(t._iv))
+  Object.values(exTimers.value).forEach(t => clearInterval(t._iv))
+})
+
 function finishWorkout() {
   if (completedCount.value === exercises.value.length) {
     alert('🎉 Great workout! You completed all exercises!')
@@ -533,10 +658,8 @@ const estimatedDuration = computed(() => {
   user-select: none;
 }
 
-.exercise-header:hover {
-  background: var(--surface2);
-  border-radius: 10px;
-}
+.exercise-header:hover { background: var(--surface2); border-radius: 10px 10px 0 0; }
+.ex-always { padding: 0 14px 12px; display: flex; flex-direction: column; gap: 8px; }
 
 .exercise-info {
   display: flex;
@@ -783,16 +906,39 @@ const estimatedDuration = computed(() => {
 }
 
 @media (max-width: 768px) {
-  .summary-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .sets-reps-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .exercise-header {
-    flex-wrap: wrap;
-  }
+  .summary-grid { grid-template-columns: 1fr; }
+  .sets-reps-grid { grid-template-columns: 1fr; }
+  .exercise-header { flex-wrap: wrap; }
 }
+.rep-counter { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.rep-tap { display: flex; align-items: baseline; gap: 2px; background: var(--surface); border: 2px solid var(--border); border-radius: 10px; padding: 5px 14px; cursor: pointer; transition: all 0.15s; font-weight: 800; }
+.rep-tap:hover { border-color: var(--accent); }
+.rep-num { font-size: 20px; color: var(--text-h); transition: color 0.2s; }
+.rep-num.reached { color: #22c55e; }
+.rep-target { font-size: 12px; color: var(--text); }
+.rep-reset { background: none; border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; font-size: 13px; cursor: pointer; color: var(--text); transition: all 0.15s; }
+.rep-reset:hover { border-color: var(--accent); color: var(--accent); }
+.rep-label { font-size: 10px; color: var(--text); font-weight: 600; }
+.ex-timer { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.ex-timer button { padding: 4px 9px; border-radius: 7px; border: 1px solid var(--border); background: var(--surface2); color: var(--text); font-size: 13px; cursor: pointer; transition: all 0.15s; }
+.ex-timer button:hover { border-color: var(--accent); color: var(--accent); }
+.et-time { font-size: 22px; font-weight: 800; color: var(--text-h); font-variant-numeric: tabular-nums; min-width: 52px; }
+.ex-timer.running .et-time { color: #f97316; }
+.ex-timer.done .et-time { color: #22c55e; }
+.et-label { font-size: 10px; color: var(--text); font-weight: 600; }
+.set-counter { display: flex; align-items: center; gap: 5px; margin-left: auto; }
+.set-btn { padding: 4px 10px; border-radius: 7px; border: 1px solid var(--accent); background: #6366f122; color: var(--accent); font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.15s; }
+.set-btn:hover { background: var(--accent); color: #fff; }
+.set-done { font-size: 16px; font-weight: 800; color: var(--text-h); min-width: 18px; text-align: center; }
+.inline-rest { padding: 10px 12px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); transition: border-color 0.3s; }
+.inline-rest.running { border-color: #f9731655; }
+.inline-rest.finished { border-color: #22c55e88; }
+.irt-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.irt-label { font-size: 11px; font-weight: 700; color: var(--text-h); }
+.irt-time { font-size: 18px; font-weight: 800; color: var(--text-h); font-variant-numeric: tabular-nums; }
+.irt-bar { width: 100%; height: 5px; background: var(--surface2); border-radius: 99px; overflow: hidden; margin-bottom: 8px; }
+.irt-fill { height: 100%; border-radius: 99px; transition: width 0.9s linear, background 0.3s; }
+.irt-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+.irt-btns button { padding: 5px 10px; border-radius: 7px; border: 1px solid var(--border); background: var(--surface2); color: var(--text); font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.15s; }
+.irt-btns button:hover { border-color: var(--accent); color: var(--accent); }
 </style>

@@ -47,7 +47,7 @@
     </div>
 
     <!-- Module Detail Modal -->
-    <div v-if="selectedModule" class="modal-overlay" @click.self="selectedModule = null">
+    <div v-if="selectedModule" class="modal-overlay" @click.self="closeModule">
       <div class="modal-sheet">
         <div class="modal-handle"></div>
         <div class="modal-header">
@@ -207,11 +207,16 @@ const currentWorkout = computed(() => {
 function openModule(mod) {
   selectedModule.value = mod
   modalTab.value = 'home'
+  document.body.style.overflow = 'hidden'
+}
+
+function closeModule() {
+  selectedModule.value = null
+  document.body.style.overflow = ''
 }
 
 function startWorkout() {
-  // TODO: navigate to active workout session
-  selectedModule.value = null
+  closeModule()
 }
 </script>
 

@@ -148,6 +148,7 @@
       <Finishing         v-if="tab === 'finishing'"    :profile="userProfile" />
       <BasketballIQ      v-if="tab === 'iq'"           :profile="userProfile" />
       <Recovery          v-if="tab === 'recovery'"     :profile="userProfile" />
+      <PelvicCoreProgram v-if="tab === 'pelvic'"       :profile="userProfile" />
       <Nutrition         v-if="tab === 'nutrition'"    :profile="userProfile" />
       <ProfilePage       v-if="tab === 'profile'"      :uid="user.uid" :profile="userProfile" @saved="onProfileSaved" />
     </main>
@@ -207,6 +208,7 @@ import Shooting from './components/Shooting.vue'
 import Finishing from './components/Finishing.vue'
 import BasketballIQ from './components/BasketballIQ.vue'
 import Recovery from './components/Recovery.vue'
+import PelvicCoreProgram from './components/PelvicCoreProgram.vue'
 import Nutrition from './components/Nutrition.vue'
 import ProfilePage from './components/ProfilePage.vue'
 
@@ -264,6 +266,7 @@ const navItems = [
   { id: 'finishing',   icon: '🏀', label: 'Finishing' },
   { id: 'iq',          icon: '🧠', label: 'IQ' },
   { id: 'recovery',    icon: '🧊', label: 'Recovery' },
+  { id: 'pelvic',      icon: '🏋️', label: 'Pelvic & Core' },
   { id: 'nutrition',   icon: '🥗', label: 'Nutrition' },
   { id: 'profile',     icon: '👤', label: 'Profile' },
 ]
@@ -293,6 +296,7 @@ const moreGroups = [
   ]},
   { label: 'More', items: [
     { id: 'recovery',   icon: '🧊', label: 'Recovery' },
+    { id: 'pelvic',     icon: '🏋️', label: 'Pelvic & Core' },
     { id: 'nutrition',  icon: '🥗', label: 'Nutrition' },
     { id: 'tools',      icon: '🔧', label: 'Tools' },
     { id: 'community',  icon: '👥', label: 'Community' },
@@ -327,6 +331,7 @@ const navGroups = {
   ],
   more: [
     { id: 'recovery',   icon: '🧊', label: 'Recovery' },
+    { id: 'pelvic',     icon: '🏋️', label: 'Pelvic & Core' },
     { id: 'nutrition',  icon: '🥗', label: 'Nutrition' },
     { id: 'tools',      icon: '🔧', label: 'Tools' },
     { id: 'community',  icon: '👥', label: 'Community' },

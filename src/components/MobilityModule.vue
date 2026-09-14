@@ -94,6 +94,22 @@
           </div>
         </div>
 
+        <!-- Timer + Set Counter -->
+        <div class="ex-controls">
+          <div class="ex-timer" :class="{ running: getExTimer(exercise.id).running, done: getExTimer(exercise.id).done }">
+            <span class="et-time">{{ timerDisplay(getExTimer(exercise.id).total ? getExTimer(exercise.id) : { remaining: parseDurationSecs(exercise.duration) || 0, total: parseDurationSecs(exercise.duration) || 1 }) }}</span>
+            <button v-if="!getExTimer(exercise.id).running && !getExTimer(exercise.id).done" @click.stop="startExTimer(exercise.id, parseDurationSecs(exercise.duration))">▶</button>
+            <button v-if="getExTimer(exercise.id).running" @click.stop="pauseExTimer(exercise.id)">⏸</button>
+            <button @click.stop="resetExTimer(exercise.id, parseDurationSecs(exercise.duration))">↺</button>
+            <span class="et-label">{{ getExTimer(exercise.id).done ? '✅ Done!' : getExTimer(exercise.id).running ? 'Hold...' : 'Timer' }}</span>
+          </div>
+          <div class="set-counter">
+            <button class="set-btn" @click.stop="addSet(exercise.id)">+Set</button>
+            <span class="set-done">{{ getSetState(exercise.id).done }}</span>
+            <button class="set-reset" @click.stop="resetSets(exercise.id)">↺</button>
+          </div>
+        </div>
+
         <!-- Completion Status -->
         <div class="completion-status" :class="{ completed: exercise.completed }">
           {{ exercise.completed ? '✅ Completed' : 'Not Started' }}
@@ -135,7 +151,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onUnmounted } from 'vue'
 
 const exercises = ref([
   {
@@ -326,6 +342,59 @@ const exercises = ref([
     benefits: ['Thoracic mobility', 'Shoulder health', 'Posture improvement', 'Breathing capacity'],
   },
 ])
+
+// ── Timer / Set helpers ──
+const exTimers = ref({})
+const setCounters = ref({})
+
+function parseDurationSecs(duration) {
+  if (!duration) return null
+  const minMatch = duration.match(/(\d+)\s*min/i)
+  const secMatch = duration.match(/(\d+)\s*sec/i)
+  if (minMatch) return parseInt(minMatch[1]) * 60
+  if (secMatch) return parseInt(secMatch[1])
+  return null
+}
+function getExTimer(id) {
+  if (!exTimers.value[id]) exTimers.value[id] = { remaining: 0, total: 0, running: false, done: false, _iv: null }
+  return exTimers.value[id]
+}
+function startExTimer(id, sec) {
+  const t = getExTimer(id)
+  if (t.running) return
+  if (!t.total || t.done || t.remaining === 0) { t.remaining = sec; t.total = sec; t.done = false }
+  t.running = true
+  t._iv = setInterval(() => {
+    if (t.remaining <= 1) { t.remaining = 0; t.running = false; t.done = true; clearInterval(t._iv); pingSound() }
+    else t.remaining--
+  }, 1000)
+}
+function pauseExTimer(id) { const t = getExTimer(id); clearInterval(t._iv); t.running = false }
+function resetExTimer(id, sec) {
+  const t = getExTimer(id); clearInterval(t._iv)
+  t.running = false; t.done = false; t.remaining = sec; t.total = sec
+}
+function timerDisplay(t) {
+  const m = Math.floor(t.remaining / 60), s = t.remaining % 60
+  return `${m}:${s.toString().padStart(2, '0')}`
+}
+function getSetState(id) {
+  if (!setCounters.value[id]) setCounters.value[id] = { done: 0 }
+  return setCounters.value[id]
+}
+function addSet(id) { getSetState(id).done++ }
+function resetSets(id) { setCounters.value[id] = { done: 0 } }
+function pingSound() {
+  try {
+    const ctx = new AudioContext(), osc = ctx.createOscillator(), gain = ctx.createGain()
+    osc.connect(gain); gain.connect(ctx.destination)
+    osc.frequency.value = 880
+    gain.gain.setValueAtTime(0.3, ctx.currentTime)
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6)
+    osc.start(); osc.stop(ctx.currentTime + 0.6)
+  } catch {}
+}
+onUnmounted(() => { Object.values(exTimers.value).forEach(t => clearInterval(t._iv)) })
 
 const activeFilter = ref('All')
 
@@ -674,17 +743,22 @@ function toggleComplete(id) {
 }
 
 @media (max-width: 768px) {
-  .exercises-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .header-content {
-    flex-direction: column;
-    gap: 12px;
-  }
+  .exercises-grid { grid-template-columns: 1fr; }
+  .stats-grid { grid-template-columns: 1fr; }
+  .header-content { flex-direction: column; gap: 12px; }
 }
+.ex-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding-top: 4px; }
+.ex-timer { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; flex: 1; }
+.ex-timer button { padding: 4px 9px; border-radius: 7px; border: 1px solid var(--border); background: var(--surface2); color: var(--text); font-size: 13px; cursor: pointer; transition: all 0.15s; }
+.ex-timer button:hover { border-color: var(--accent); color: var(--accent); }
+.et-time { font-size: 20px; font-weight: 800; color: var(--text-h); font-variant-numeric: tabular-nums; min-width: 48px; }
+.ex-timer.running .et-time { color: #f97316; }
+.ex-timer.done .et-time { color: #22c55e; }
+.et-label { font-size: 10px; color: var(--text); font-weight: 600; }
+.set-counter { display: flex; align-items: center; gap: 5px; }
+.set-btn { padding: 4px 10px; border-radius: 7px; border: 1px solid var(--accent); background: #6366f122; color: var(--accent); font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.15s; }
+.set-btn:hover { background: var(--accent); color: #fff; }
+.set-done { font-size: 16px; font-weight: 800; color: var(--text-h); min-width: 18px; text-align: center; }
+.set-reset { background: none; border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; font-size: 13px; cursor: pointer; color: var(--text); transition: all 0.15s; }
+.set-reset:hover { border-color: var(--accent); color: var(--accent); }
 </style>
