@@ -228,9 +228,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 
 const expandedId = ref(null)
+
+const LS = 'upper_body_state'
 
 const exercises = ref([
   {
@@ -485,6 +487,23 @@ const repCounters = ref({})
 const setCounters = ref({})
 const restTimers = ref({})
 const exTimers = ref({})
+
+onMounted(() => {
+  try {
+    const s = JSON.parse(localStorage.getItem(LS) || '{}')
+    if (s.exercises) exercises.value.forEach(e => {
+      const saved = s.exercises[e.id]
+      if (saved) { e.completed = saved.completed ?? e.completed; e.completedSets = saved.completedSets ?? e.completedSets; e.notes = saved.notes ?? e.notes }
+    })
+    if (s.repCounters) repCounters.value = s.repCounters
+    if (s.setCounters) setCounters.value = s.setCounters
+  } catch {}
+})
+watch([exercises, repCounters, setCounters], () => {
+  const exMap = {}
+  exercises.value.forEach(e => { exMap[e.id] = { completed: e.completed, completedSets: e.completedSets, notes: e.notes } })
+  localStorage.setItem(LS, JSON.stringify({ exercises: exMap, repCounters: repCounters.value, setCounters: setCounters.value }))
+}, { deep: true })
 
 function isTimeBased(reps) { return /sec|min/i.test(reps || '') }
 function parseTargetSecs(reps) {

@@ -151,7 +151,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 
 const exercises = ref([
   {
@@ -346,6 +346,22 @@ const exercises = ref([
 // ── Timer / Set helpers ──
 const exTimers = ref({})
 const setCounters = ref({})
+
+const LS = 'mobility_state'
+onMounted(() => {
+  try {
+    const s = JSON.parse(localStorage.getItem(LS) || '{}')
+    if (s.exercises) exercises.value.forEach(e => {
+      if (s.exercises[e.id] !== undefined) e.completed = s.exercises[e.id]
+    })
+    if (s.setCounters) setCounters.value = s.setCounters
+  } catch {}
+})
+watch([exercises, setCounters], () => {
+  const exMap = {}
+  exercises.value.forEach(e => { exMap[e.id] = e.completed })
+  localStorage.setItem(LS, JSON.stringify({ exercises: exMap, setCounters: setCounters.value }))
+}, { deep: true })
 
 function parseDurationSecs(duration) {
   if (!duration) return null

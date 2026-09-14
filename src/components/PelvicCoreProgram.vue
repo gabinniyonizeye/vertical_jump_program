@@ -409,7 +409,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 defineProps({ profile: Object })
 
 const currentDay = ref(1)
@@ -420,6 +420,27 @@ const repCounters = ref({})
 const restTimers = ref({})
 const exTimers = ref({})
 const setCounters = ref({})
+
+const LS = 'pcp_state'
+onMounted(() => {
+  try {
+    const s = JSON.parse(localStorage.getItem(LS) || '{}')
+    if (s.currentDay) currentDay.value = s.currentDay
+    if (s.completedDays) completedDays.value = s.completedDays
+    if (s.doneExercises) doneExercises.value = s.doneExercises
+    if (s.repCounters) repCounters.value = s.repCounters
+    if (s.setCounters) setCounters.value = s.setCounters
+  } catch {}
+})
+watch([currentDay, completedDays, doneExercises, repCounters, setCounters], () => {
+  localStorage.setItem(LS, JSON.stringify({
+    currentDay: currentDay.value,
+    completedDays: completedDays.value,
+    doneExercises: doneExercises.value,
+    repCounters: repCounters.value,
+    setCounters: setCounters.value,
+  }))
+}, { deep: true })
 
 function toggleVideo(name) { hiddenVideos.value[name] = hiddenVideos.value[name] === false ? true : false }
 function getEmbedUrl(url) {

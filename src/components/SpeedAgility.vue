@@ -66,8 +66,10 @@
 </template>
 
 <script setup>
-import { ref, onUnmounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 defineProps({ profile: Object })
+
+const LS = 'speed_agility_state'
 
 const drills = [
   {
@@ -105,6 +107,17 @@ const drills = [
 const repCounters = ref({})
 const setCounters = ref({})
 const restTimers = ref({})
+
+onMounted(() => {
+  try {
+    const s = JSON.parse(localStorage.getItem(LS) || '{}')
+    if (s.repCounters) repCounters.value = s.repCounters
+    if (s.setCounters) setCounters.value = s.setCounters
+  } catch {}
+})
+watch([repCounters, setCounters], () => {
+  localStorage.setItem(LS, JSON.stringify({ repCounters: repCounters.value, setCounters: setCounters.value }))
+}, { deep: true })
 
 function getRepCount(id) {
   if (repCounters.value[id] === undefined) repCounters.value[id] = 0
