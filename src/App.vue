@@ -148,8 +148,9 @@
       <Finishing         v-if="tab === 'finishing'"    :profile="userProfile" />
       <BasketballIQ      v-if="tab === 'iq'"           :profile="userProfile" />
       <Recovery          v-if="tab === 'recovery'"     :profile="userProfile" />
-      <PelvicCoreProgram v-if="tab === 'pelvic'"       :profile="userProfile" />
-      <Nutrition         v-if="tab === 'nutrition'"    :profile="userProfile" />
+      <PelvicCoreProgram    v-if="tab === 'pelvic'"      :profile="userProfile" />
+      <ShootingRangeProgram v-if="tab === 'shootrange'" />
+      <Nutrition            v-if="tab === 'nutrition'"   :profile="userProfile" />
       <ProfilePage       v-if="tab === 'profile'"      :uid="user.uid" :profile="userProfile" @saved="onProfileSaved" />
     </main>
 
@@ -209,6 +210,7 @@ import Finishing from './components/Finishing.vue'
 import BasketballIQ from './components/BasketballIQ.vue'
 import Recovery from './components/Recovery.vue'
 import PelvicCoreProgram from './components/PelvicCoreProgram.vue'
+import ShootingRangeProgram from './components/ShootingRangeProgram.vue'
 import Nutrition from './components/Nutrition.vue'
 import ProfilePage from './components/ProfilePage.vue'
 
@@ -295,12 +297,13 @@ const moreGroups = [
     { id: 'iq',           icon: '🧠', label: 'IQ' },
   ]},
   { label: 'More', items: [
-    { id: 'recovery',   icon: '🧊', label: 'Recovery' },
-    { id: 'pelvic',     icon: '🏋️', label: 'Pelvic & Core' },
-    { id: 'nutrition',  icon: '🥗', label: 'Nutrition' },
-    { id: 'tools',      icon: '🔧', label: 'Tools' },
-    { id: 'community',  icon: '👥', label: 'Community' },
-    { id: 'profile',    icon: '👤', label: 'Profile' },
+    { id: 'recovery',    icon: '🧊', label: 'Recovery' },
+    { id: 'pelvic',      icon: '🏋️', label: 'Pelvic & Core' },
+    { id: 'shootrange',  icon: '🎯', label: 'Shoot Range' },
+    { id: 'nutrition',   icon: '🥗', label: 'Nutrition' },
+    { id: 'tools',       icon: '🔧', label: 'Tools' },
+    { id: 'community',   icon: '👥', label: 'Community' },
+    { id: 'profile',     icon: '👤', label: 'Profile' },
   ]},
 ]
 
@@ -332,6 +335,7 @@ const navGroups = {
   more: [
     { id: 'recovery',   icon: '🧊', label: 'Recovery' },
     { id: 'pelvic',     icon: '🏋️', label: 'Pelvic & Core' },
+    { id: 'shootrange', icon: '🎯', label: 'Shoot Range' },
     { id: 'nutrition',  icon: '🥗', label: 'Nutrition' },
     { id: 'tools',      icon: '🔧', label: 'Tools' },
     { id: 'community',  icon: '👥', label: 'Community' },
