@@ -89,6 +89,24 @@
       </button>
     </div>
 
+    <!-- Dunk Pro Spotlight Card -->
+    <div class="dunkpro-spotlight card" @click="$emit('go', 'dunkpro')">
+      <div class="dps-top">
+        <div class="dps-badge">🔥 NYIRABYO DUNK PRO</div>
+        <div class="dps-edition">Daily Gym Edition</div>
+      </div>
+      <h3 class="dps-title">Goal: Make Your First Dunk 🏀</h3>
+      <p class="dps-desc">"Gym every day is fine. Max jumping every day is not." 7-day gym cycle + weekly Saturday dunk challenge tracker.</p>
+      <div class="dps-btn-row">
+        <button class="dps-btn primary" @click.stop="$emit('go', 'dunkpro')">
+          Open 7-Day Gym Plan →
+        </button>
+        <button class="dps-btn secondary" @click.stop="$emit('go', 'dunkpro')">
+          🎯 Weekly Challenge
+        </button>
+      </div>
+    </div>
+
     <!-- Daily Missions -->
     <div class="section-header">
       <div class="section-title">⚡ Daily Missions</div>
@@ -470,5 +488,74 @@ const tip = computed(() => tips[new Date().getDate() % tips.length])
 @keyframes float {
   0%, 100% { transform: translateY(0); }
   50%       { transform: translateY(-5px); }
+}
+
+/* Dunk Pro Spotlight */
+.dunkpro-spotlight {
+  border-left: 4px solid var(--accent);
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.14) 0%, rgba(15, 15, 30, 0.95) 100%);
+  margin-bottom: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 20px rgba(249, 115, 22, 0.1);
+}
+.dunkpro-spotlight:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(249, 115, 22, 0.2);
+}
+.dps-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.dps-badge {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: 0.5px;
+}
+.dps-edition {
+  font-size: 11px;
+  background: rgba(249, 115, 22, 0.2);
+  color: #fff;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-weight: 700;
+}
+.dps-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text-h);
+  margin-bottom: 4px;
+}
+.dps-desc {
+  font-size: 12px;
+  color: var(--text2);
+  line-height: 1.4;
+  margin-bottom: 12px;
+}
+.dps-btn-row {
+  display: flex;
+  gap: 8px;
+}
+.dps-btn {
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.dps-btn.primary {
+  background: var(--accent);
+  color: #fff;
+  flex: 1;
+}
+.dps-btn.secondary {
+  background: var(--surface2);
+  color: var(--text-h);
+  border: 1px solid var(--border);
 }
 </style>

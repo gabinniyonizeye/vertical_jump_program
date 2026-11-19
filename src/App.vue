@@ -150,6 +150,7 @@
       <Recovery          v-if="tab === 'recovery'"     :profile="userProfile" />
       <PelvicCoreProgram    v-if="tab === 'pelvic'"      :profile="userProfile" />
       <ShootingRangeProgram v-if="tab === 'shootrange'" />
+      <DunkProGym           v-if="tab === 'dunkpro'"     :uid="user.uid" :profile="userProfile" @go="tab = $event" />
       <Nutrition            v-if="tab === 'nutrition'"   :profile="userProfile" />
       <ProfilePage       v-if="tab === 'profile'"      :uid="user.uid" :profile="userProfile" @saved="onProfileSaved" />
     </main>
@@ -211,6 +212,7 @@ import BasketballIQ from './components/BasketballIQ.vue'
 import Recovery from './components/Recovery.vue'
 import PelvicCoreProgram from './components/PelvicCoreProgram.vue'
 import ShootingRangeProgram from './components/ShootingRangeProgram.vue'
+import DunkProGym from './components/DunkProGym.vue'
 import Nutrition from './components/Nutrition.vue'
 import ProfilePage from './components/ProfilePage.vue'
 
@@ -260,6 +262,7 @@ const navItems = [
   { id: 'lower',       icon: '🦵', label: 'Lower' },
   { id: 'upper',       icon: '💪', label: 'Upper' },
   { id: 'explosive',   icon: '⚡', label: 'Explosive' },
+  { id: 'dunkpro',     icon: '🔥', label: 'Dunk Pro (Gym)' },
   { id: 'train',       icon: '🏀', label: 'Train' },
   { id: 'progress',    icon: '📈', label: 'Progress' },
   { id: 'tools',       icon: '🔧', label: 'Tools' },
@@ -283,6 +286,7 @@ const bottomNavItems = [
 
 const moreGroups = [
   { label: 'Training', items: [
+    { id: 'dunkpro',     icon: '🔥', label: 'Dunk Pro (Gym)' },
     { id: 'mobility',    icon: '🧘', label: 'Mobility' },
     { id: 'lower',       icon: '🦵', label: 'Lower Body' },
     { id: 'upper',       icon: '💪', label: 'Upper Body' },
@@ -319,6 +323,7 @@ const navGroups = {
     { id: 'profile',   icon: '👤', label: 'Profile' },
   ],
   training: [
+    { id: 'dunkpro',   icon: '🔥', label: 'Dunk Pro (Gym)' },
     { id: 'mobility',  icon: '🧘', label: 'Mobility' },
     { id: 'lower',     icon: '🦵', label: 'Lower Body' },
     { id: 'upper',     icon: '💪', label: 'Upper Body' },
